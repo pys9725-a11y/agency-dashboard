@@ -27,7 +27,10 @@ if uploaded_file:
         # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수 (위치 변경 및 지사별 다채로운 색상 적용)
+        # 두 그래프에 동일한 지사 색상 팔레트 사용
+        color_palette = px.colors.qualitative.Plotly
+        
+        # [왼쪽] 지사별 평균 서비스 점수
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
             if '지사' in df.columns and '총 점수' in df.columns:
@@ -36,19 +39,21 @@ if uploaded_file:
                     branch_avg, 
                     x="지사", 
                     y="총 점수", 
-                    color="지사",  # 지사별로 서로 다른 알록달록한 색상 적용
+                    color="지사",
+                    color_discrete_sequence=color_palette,  # 공통 색상 적용
                     text_auto='.1f',
                     title="지사별 서비스 평가 평균 점수"
                 )
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # [오른쪽] 미입력 건수 vs 총 점수 (위치 변경)
+        # [오른쪽] 미입력 건수 vs 총 점수
         with right_col:
             st.subheader("💡 미입력 건수 vs 총 점수")
             if '미입력' in df.columns and '총 점수' in df.columns:
                 fig1 = px.scatter(
                     df, x="미입력", y="총 점수", 
                     color="지사" if "지사" in df.columns else None,
+                    color_discrete_sequence=color_palette,  # 공통 색상 적용
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
                     size="총접수건" if "총접수건" in df.columns else None,
                     title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)"
