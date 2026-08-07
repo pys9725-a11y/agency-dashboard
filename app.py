@@ -165,7 +165,6 @@ if uploaded_file:
         branch_options = ["전체"] + list(unique_branches)
         selected_sidebar_branch = st.sidebar.selectbox("조회할 지사를 선택하세요", branch_options, key="sidebar_branch")
 
-        # 선택된 지사에 동적으로 연동되는 대리점 목록
         if selected_sidebar_branch != "전체" and '지사' in df.columns:
             filtered_agencies = sorted(df[df['지사'] == selected_sidebar_branch]['방문 대리점'].dropna().unique())
         else:
@@ -180,7 +179,6 @@ if uploaded_file:
             else:
                 filtered_main_df = df.copy()
 
-            # 상단 KPI 요약 카드
             st.markdown("### 📌 서비스 평가 핵심 요약")
             kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
@@ -203,7 +201,6 @@ if uploaded_file:
 
             st.markdown("---")
 
-            # 시각화 영역
             left_col, right_col = st.columns(2)
             with left_col:
                 st.subheader("🏢 지사별 평균 서비스 점수")
@@ -244,7 +241,6 @@ if uploaded_file:
                         )
                         st.plotly_chart(fig1, use_container_width=True)
 
-            # 표 서식 적용
             display_df = filtered_main_df.copy()
             if s_col_name:
                 display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
@@ -260,7 +256,6 @@ if uploaded_file:
                 if col not in percent_cols and col != '_s_seconds':
                     display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-            # TOP 20 & LOW 20
             st.markdown("---")
             col_1a, col_1b = st.columns(2)
             with col_1a:
@@ -289,7 +284,6 @@ if uploaded_file:
                         idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[True, False]).index
                         st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
-            # 전체 대리점 조회
             st.markdown("---")
             st.subheader("🔍 대리점별 전체 항목 조회")
             clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
@@ -337,12 +331,12 @@ if uploaded_file:
                     # 1. 조치입력 점수
                     m1.metric("1. 조치입력 점수", f"{agency_data.get('조치입력 점수', 0):.2f} 점")
 
-                    # 2. 조치정보입력율 현황
+                    # 2. 조치정보입력율 점수 (점수로 메인 표기 변경)
                     act_rate = agency_data.get('입력율(%)', 0)
                     act_rate_str = f"{act_rate*100:.1f}%" if pd.notnull(act_rate) and act_rate <= 1.0 else f"{act_rate:.1f}%"
                     unentered_cnt = agency_data.get('미입력', 0)
-                    unentered_str = f"미입력: {int(unentered_cnt):,}건" if pd.notnull(unentered_cnt) else "미입력: 0건"
-                    m2.metric("2. 조치정보입력율", act_rate_str, unentered_str)
+                    unentered_str = f"{int(unentered_cnt):,}건" if pd.notnull(unentered_cnt) else "0건"
+                    m2.metric("2. 조치정보입력율", f"{agency_data.get('조치입력 점수', 0):.2f} 점", f"입력율: {act_rate_str} (미입력: {unentered_str})")
 
                     # 3. 약속시간 (예약)
                     res_rate = agency_data.get('예약율(%)', 0)
@@ -375,7 +369,7 @@ if uploaded_file:
 
                     st.markdown("---")
 
-                    # 3. 평균 비교 차트 (순서 변경: 1.전체평균 -> 2.지사평균 -> 3.해당대리점)
+                    # 3. 평균 비교 차트
                     st.markdown("### 📊 평균 대비 세부 항목 점수 비교")
                     
                     score_cols = ['조치입력 점수', '예약 점수', '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수']
@@ -386,13 +380,12 @@ if uploaded_file:
                         branch_avg_scores = [branch_agencies[c].mean() for c in available_score_cols]
                         total_avg_scores = [df[c].mean() for c in available_score_cols]
 
-                        # Y축 상단 마진 자동 산출 (숫자 라벨 잘림 방지)
                         all_vals = total_avg_scores + branch_avg_scores + agency_scores
                         max_y = (max(all_vals) * 1.18) if all_vals else 25
 
                         fig_comp = go.Figure()
 
-                        # 1. 전체 평균 (Base line - Gray)
+                        # 1. 전체 평균 (Base Line)
                         fig_comp.add_trace(go.Bar(
                             x=available_score_cols,
                             y=total_avg_scores,
@@ -403,7 +396,7 @@ if uploaded_file:
                             textfont=dict(size=15, weight='bold')
                         ))
 
-                        # 2. 해당 지사 평균 (Regional - Amber/Orange)
+                        # 2. 해당 지사 평균
                         fig_comp.add_trace(go.Bar(
                             x=available_score_cols,
                             y=branch_avg_scores,
@@ -414,7 +407,7 @@ if uploaded_file:
                             textfont=dict(size=15, weight='bold')
                         ))
 
-                        # 3. 해당 대리점 (Hero Target - Royal Blue 강조)
+                        # 3. 해당 대리점 (Hero Target)
                         fig_comp.add_trace(go.Bar(
                             x=available_score_cols,
                             y=agency_scores,
@@ -425,7 +418,6 @@ if uploaded_file:
                             textfont=dict(size=16, weight='bold')
                         ))
 
-                        # 레이아웃 스타일 설정
                         fig_comp.update_layout(
                             barmode='group',
                             bargap=0.22,
