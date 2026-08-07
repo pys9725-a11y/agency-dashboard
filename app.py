@@ -5,48 +5,48 @@ from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ 전체 폰트 및 UI 요소 확대 CSS 스타일 ------------------
+# ------------------ 전체 폰트 및 UI 요소 확대 CSS 스타일 (기존 대비 +4px 적용) ------------------
 st.markdown("""
     <style>
-        /* 1. 전체 기본 폰트 크기 확대 */
+        /* 1. 전체 기본 폰트 크기 확대 (+4px -> 28px) */
         html, body, [class*="css"] {
-            font-size: 24px !important;
+            font-size: 28px !important;
         }
         
-        /* 2. 제목 및 헤더 폰트 크기 */
-        h1 { font-size: 3.2rem !important; }
-        h2 { font-size: 2.6rem !important; }
-        h3 { font-size: 2.2rem !important; }
+        /* 2. 제목 및 헤더 폰트 크기 (+0.2rem) */
+        h1 { font-size: 3.4rem !important; }
+        h2 { font-size: 2.8rem !important; }
+        h3 { font-size: 2.4rem !important; }
         
-        /* 3. 표(Dataframe) 내부 글자 크기 */
+        /* 3. 표(Dataframe) 내부 글자 크기 (+4px -> 26px) */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
-            font-size: 22px !important;
+            font-size: 26px !important;
         }
         
-        /* 4. 드롭다운(Selectbox) 본문 및 라벨 글자 크기 */
+        /* 4. 드롭다운(Selectbox) 본문 및 라벨 글자 크기 (+4px) */
         div[data-baseweb="select"] * {
-            font-size: 22px !important;
+            font-size: 26px !important;
         }
         div[data-widget="selectbox"] label, .stSelectbox label {
-            font-size: 26px !important;
+            font-size: 30px !important;
             font-weight: bold !important;
         }
 
-        /* 5. 파일 업로더 글자 크기 */
+        /* 5. 파일 업로더 글자 크기 (+4px -> 28px) */
         .stFileUploader label {
-            font-size: 24px !important;
+            font-size: 28px !important;
         }
         .stFileUploader section {
             padding: 2rem !important;
         }
 
-        /* 6. 탭(Tab) 버튼 폰트 및 여백 */
+        /* 6. 탭(Tab) 버튼 폰트 및 여백 (+4px -> 27px) */
         button[data-baseweb="tab"] {
-            font-size: 23px !important;
+            font-size: 27px !important;
             padding: 12px 24px !important;
         }
         button[data-baseweb="tab"] div {
-            font-size: 23px !important;
+            font-size: 27px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -174,13 +174,13 @@ if uploaded_file:
                     height=550
                 )
                 fig2.update_layout(
-                    font=dict(size=17),
-                    xaxis=dict(tickfont=dict(size=16)),
-                    yaxis=dict(tickfont=dict(size=16))
+                    font=dict(size=21),              # 기존 17px -> 21px (+4px)
+                    xaxis=dict(tickfont=dict(size=20)), # 기존 16px -> 20px (+4px)
+                    yaxis=dict(tickfont=dict(size=20))  # 기존 16px -> 20px (+4px)
                 )
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # [오른쪽] 총 점수 vs 총접수건 (요청 사항 반영 위치)
+        # [오른쪽] 총 점수 vs 총접수건
         with right_col:
             st.subheader("💡 총 점수 vs 총접수건")
             total_cnt_col = '총접수건' if '총접수건' in df.columns else ('총접수' if '총접수' in df.columns else None)
@@ -197,17 +197,17 @@ if uploaded_file:
                     height=550
                 )
                 
-                # [요청 반영 1] 점 크기 50% 확대 (기본 6 -> 9~10)
+                # 점 크기 유지 (50% 확대 상태)
                 fig1.update_traces(marker=dict(size=10))
                 
-                # [요청 반영 2] 우측 지사 범례 텍스트 크기 +3px (17px -> 20px)
+                # 텍스트 크기 일괄 +4px 조정
                 fig1.update_layout(
-                    font=dict(size=17),
-                    xaxis=dict(tickfont=dict(size=16)),
-                    yaxis=dict(tickfont=dict(size=16)),
+                    font=dict(size=21),              # 기존 17px -> 21px (+4px)
+                    xaxis=dict(tickfont=dict(size=20)), # 기존 16px -> 20px (+4px)
+                    yaxis=dict(tickfont=dict(size=20)), # 기존 16px -> 20px (+4px)
                     legend=dict(
-                        font=dict(size=20),        # 범례 목록 텍스트 크기
-                        title=dict(font=dict(size=20)) # '지사' 범례 타이틀 크기
+                        font=dict(size=24),        # 기존 20px -> 24px (+4px)
+                        title=dict(font=dict(size=24))
                     )
                 )
                 st.plotly_chart(fig1, use_container_width=True)
