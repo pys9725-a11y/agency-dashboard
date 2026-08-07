@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
@@ -39,29 +40,50 @@ st.title("📊 대리점 서비스 평가 및 데이터 입력 현황")
 # 엑셀 파일 업로드
 uploaded_file = st.file_uploader("월별 서비스 평가 엑셀 파일을 업로드하세요", type=["xlsx"])
 
-# 시간 변환 함수 (S열 처리용: HH:MM:SS -> X시간 Y분)
+# 시간 데이터를 초(seconds) 단위 숫자로 정규화하는 함수 (정렬용)
+def parse_time_to_seconds(val):
+    if pd.isna(val) or val == "":
+        return -1
+    try:
+        if isinstance(val, time):
+            return val.hour * 3600 + val.minute * 60 + val.second
+        elif isinstance(val, datetime):
+            return val.hour * 3600 + val.minute * 60 + val.second
+        elif isinstance(val, pd.Timedelta):
+            return int(val.total_seconds())
+        elif isinstance(val, str):
+            parts = val.split(":")
+            if len(parts) >= 2:
+                return int(parts[0]) * 3600 + int(parts[1]) * 60
+            return -1
+        else:
+            dt = pd.to_datetime(val)
+            return dt.hour * 3600 + dt.minute * 60 + dt.second
+    except Exception:
+        return -1
+
+# 시간 변환 함수 (S열 표기용: HH:MM:SS -> X시간 Y분)
 def format_time_duration(val):
     if pd.isna(val) or val == "":
         return ""
     try:
-        if isinstance(val, str):
-            parts = val.split(":")
-            if len(parts) >= 2:
-                hours = int(parts[0])
-                minutes = int(parts[1])
-            else:
-                return str(val)
-        elif hasattr(val, 'hour') and hasattr(val, 'minute'):
-            hours = val.hour
-            minutes = val.minute
+        if isinstance(val, time):
+            hours, minutes = val.hour, val.minute
+        elif isinstance(val, datetime):
+            hours, minutes = val.hour, val.minute
         elif isinstance(val, pd.Timedelta):
             total_seconds = int(val.total_seconds())
             hours = total_seconds // 3600
             minutes = (total_seconds % 3600) // 60
+        elif isinstance(val, str):
+            parts = val.split(":")
+            if len(parts) >= 2:
+                hours, minutes = int(parts[0]), int(parts[1])
+            else:
+                return str(val)
         else:
             dt = pd.to_datetime(val)
-            hours = dt.hour
-            minutes = dt.minute
+            hours, minutes = dt.hour, dt.minute
 
         if hours > 0 and minutes > 0:
             return f"{hours}시간 {minutes}분"
@@ -82,10 +104,7 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
-        # 엑셀 열 인덱스 기준 매핑 (동일 이름인 '점수(점)'이 여러 개 위치하므로 위치 인덱스 처리)
-        # AA4 (27번째 열 - index 26): 불만 점수
-        # P4  (16번째 열 - index 15): 예약 점수
-        # U4  (21번째 열 - index 20): 처리시간 점수
+        # 엑셀 열 인덱스 기준 매핑
         if len(df.columns) > 26 and df.columns[26] == '점수(점)':
             df.rename(columns={df.columns[26]: '불만 점수'}, inplace=True)
         elif '점수(점)' in df.columns:
@@ -104,6 +123,12 @@ if uploaded_file:
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # S열(19번째 열) 시간 정렬용 초 단위 컬럼 생성
+        s_col_name = None
+        if len(df.columns) > 18:
+            s_col_name = df.columns[18]
+            df['_s_seconds'] = df[s_col_name].apply(parse_time_to_seconds)
 
         # ------------------ 지사별 색상 및 범례 순서 고정 ------------------
         if '지사' in df.columns:
@@ -159,9 +184,7 @@ if uploaded_file:
         display_df = df.copy()
         
         # S열(19번째 열, index=18) 평균시간/단위환산 'X시간 Y분' 포맷 적용
-        s_col_name = None
-        if len(display_df.columns) > 18:
-            s_col_name = display_df.columns[18]
+        if s_col_name:
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
 
         # % 변환 처리
@@ -175,13 +198,13 @@ if uploaded_file:
 
         # 기타 일반 수치 데이터 소수점 2자리 포맷팅
         for col in display_df.select_dtypes(include=['float', 'float64']).columns:
-            if col not in percent_cols:
+            if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
         # ------------------ 3. 집중 관리 대상 모니터링 (상위 10개) ------------------
         st.markdown("---")
         
-        # [행 1] 기존 표 2개: 미입력 건수 & 서비스 불만율
+        # [행 1] 미입력 건수 & 서비스 불만율
         col_a, col_b = st.columns(2)
         
         with col_a:
@@ -189,7 +212,6 @@ if uploaded_file:
             if '방문 대리점' in df.columns and '미입력' in df.columns:
                 unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[unentered_cols].head(10)
-                # 표 제목 중 '불만 점수' -> '점수' 변경
                 top_unentered = top_unentered.rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
@@ -201,7 +223,7 @@ if uploaded_file:
                 top_dissatisfied = top_dissatisfied.rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
 
-        # [행 2] 신규 표 2개: 1시간 이내 예약율 & 평균처리시간
+        # [행 2] 1시간 이내 예약율 & 평균처리시간
         col_c, col_d = st.columns(2)
 
         with col_c:
@@ -216,8 +238,8 @@ if uploaded_file:
             st.subheader("⏱️ 평균처리시간 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and s_col_name:
                 time_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                # 원본 numeric 데이터를 활용하여 정렬
-                sorted_idx = df.sort_values(by=s_col_name, ascending=False).index
+                # 초 단위로 변환된 보조 컬럼(_s_seconds) 기준으로 오류 없이 안전하게 정렬
+                sorted_idx = df.sort_values(by='_s_seconds', ascending=False).index
                 top_time = display_df.loc[sorted_idx, time_cols].head(10)
                 top_time = top_time.rename(columns={'처리시간 점수': '점수'})
                 st.dataframe(top_time, use_container_width=True, hide_index=True, height=430)
@@ -267,19 +289,23 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and s_col_name:
                 target_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                sort_idx = df.loc[filtered_time.index].sort_values(by=s_col_name, ascending=False).index
+                sort_idx = df.loc[filtered_time.index].sort_values(by='_s_seconds', ascending=False).index
                 res = filtered_time.loc[sort_idx, target_cols].rename(columns={'처리시간 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 5. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
-        if '지사' in display_df.columns:
-            selected_branch = st.selectbox("지사를 선택하세요 (전체 조회)", ["전체"] + list(display_df["지사"].dropna().unique()), key="select_all")
-            filtered_df = display_df if selected_branch == "전체" else display_df[display_df["지사"] == selected_branch]
+        
+        # 화면 표 출력에 불필요한 보조 컬럼 제거
+        clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
+        
+        if '지사' in clean_display_df.columns:
+            selected_branch = st.selectbox("지사를 선택하세요 (전체 조회)", ["전체"] + list(clean_display_df["지사"].dropna().unique()), key="select_all")
+            filtered_df = clean_display_df if selected_branch == "전체" else clean_display_df[clean_display_df["지사"] == selected_branch]
             st.dataframe(filtered_df, use_container_width=True, height=520)
         else:
-            st.dataframe(display_df, use_container_width=True, height=520)
+            st.dataframe(clean_display_df, use_container_width=True, height=520)
 
     except ValueError:
         st.error("⚠️ 업로드한 엑셀 파일 안에 '[평가]' 라는 이름의 시트(Sheet)가 존재하지 않습니다.")
