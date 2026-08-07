@@ -7,29 +7,29 @@ st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout=
 # ------------------ 전체 폰트 및 요소 20% 확대 CSS 스타일 적용 ------------------
 st.markdown("""
     <style>
-        /* 전체 기본 폰트 크기 확대 (기존 대비 약 20% 확대) */
+        /* 전체 기본 폰트 크기 확대 */ 기존 19PX
         html, body, [class*="css"]  {
-            font-size: 19px !important;
+            font-size: 25px !important;
         }
         
-        /* 제목 및 주요 헤더 폰트 크기 확대 */
-        h1 { font-size: 2.3rem !important; }
-        h2 { font-size: 1.8rem !important; }
-        h3 { font-size: 1.5rem !important; }
+        /* 제목 및 주요 헤더 폰트 크기 확대 */ 2.3, 1.8, 1.5rem
+        h1 { font-size: 2.8rem !important; }
+        h2 { font-size: 2.3rem !important; }
+        h3 { font-size: 2.0rem !important; }
         
-        /* 표(Dataframe) 내부 글자 크기 확대 */
+        /* 표(Dataframe) 내부 글자 크기 확대 */ 16px
         .stDataFrame {
-            font-size: 16px !important;
+            font-size: 21px !important;
         }
         
-        /* 드롭다운/선택 상자 폰트 확대 */
+        /* 드롭다운/선택 상자 폰트 확대 */ 18px
         div[data-baseweb="select"] {
-            font-size: 18px !important;
+            font-size: 23px !important;
         }
 
-        /* 입력 폼 / 업로더 글자 확대 */
+        /* 입력 폼 / 업로더 글자 확대 */ 18px
         .stFileUploader label {
-            font-size: 18px !important;
+            font-size: 23px !important;
         }
     </style>
 """, unsafe_allow_html=True)
