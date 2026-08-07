@@ -27,7 +27,23 @@ if uploaded_file:
         # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
         
+        # [왼쪽] 지사별 평균 서비스 점수 (위치 변경 및 지사별 다채로운 색상 적용)
         with left_col:
+            st.subheader("🏢 지사별 평균 서비스 점수")
+            if '지사' in df.columns and '총 점수' in df.columns:
+                branch_avg = df.groupby("지사", as_index=False)['총 점수'].mean()
+                fig2 = px.bar(
+                    branch_avg, 
+                    x="지사", 
+                    y="총 점수", 
+                    color="지사",  # 지사별로 서로 다른 알록달록한 색상 적용
+                    text_auto='.1f',
+                    title="지사별 서비스 평가 평균 점수"
+                )
+                st.plotly_chart(fig2, use_container_width=True)
+
+        # [오른쪽] 미입력 건수 vs 총 점수 (위치 변경)
+        with right_col:
             st.subheader("💡 미입력 건수 vs 총 점수")
             if '미입력' in df.columns and '총 점수' in df.columns:
                 fig1 = px.scatter(
@@ -38,13 +54,6 @@ if uploaded_file:
                     title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)"
                 )
                 st.plotly_chart(fig1, use_container_width=True)
-                
-        with right_col:
-            st.subheader("🏢 지사별 평균 서비스 점수")
-            if '지사' in df.columns and '총 점수' in df.columns:
-                branch_avg = df.groupby("지사", as_index=False)['총 점수'].mean()
-                fig2 = px.bar(branch_avg, x="지사", y="총 점수", color="총 점수", text_auto='.1f')
-                st.plotly_chart(fig2, use_container_width=True)
 
         # ------------------ 2. 표 출력을 위한 데이터 % 포맷팅 ------------------
         display_df = df.copy()
