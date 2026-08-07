@@ -23,6 +23,20 @@ if uploaded_file:
         col1, col2, col3, col4 = st.columns(4)
         
         if score_col in df.columns:
+            # 1. 기존 데이터 로드 부분 (예: df = pd.read_csv(...))
+df = pd.read_csv("your_data.csv")
+score_col = "점수"  # 설정하신 컬럼 변수명
+
+# --------------------------------------------------
+# 👇 이 위치에 코드를 추가해 주세요!
+# --------------------------------------------------
+# '점' 같은 문자 제거 및 숫자 타입으로 강제 변환
+df[score_col] = df[score_col].astype(str).str.replace('점', '').str.strip()
+df[score_col] = pd.to_numeric(df[score_col], errors='coerce')
+# --------------------------------------------------
+
+# 2. 기존 에러가 났던 26번째 줄
+col1.metric("전사 평균 점수", f"{df[score_col].mean():.1f}점")
             col1.metric("전사 평균 점수", f"{df[score_col].mean():.1f}점")
         if '미입력' in df.columns:
             col2.metric("총 미입력 건수", f"{int(df['미입력'].sum())}건")
