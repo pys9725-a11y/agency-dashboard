@@ -9,27 +9,27 @@ st.markdown("""
     <style>
         /* 전체 기본 폰트 크기 확대 (기존 대비 약 20% 확대) */
         html, body, [class*="css"]  {
-            font-size: 19px !important;
+            font-size: 24px !important;
         }
         
         /* 제목 및 주요 헤더 폰트 크기 확대 */
-        h1 { font-size: 2.3rem !important; }
-        h2 { font-size: 1.8rem !important; }
-        h3 { font-size: 1.5rem !important; }
+        h1 { font-size: 2.8rem !important; }
+        h2 { font-size: 2.3rem !important; }
+        h3 { font-size: 2.0rem !important; }
         
         /* 표(Dataframe) 내부 글자 크기 확대 */
         .stDataFrame {
-            font-size: 16px !important;
+            font-size: 21px !important;
         }
         
         /* 드롭다운/선택 상자 폰트 확대 */
         div[data-baseweb="select"] {
-            font-size: 18px !important;
+            font-size: 23px !important;
         }
 
         /* 입력 폼 / 업로더 글자 확대 */
         .stFileUploader label {
-            font-size: 18px !important;
+            font-size: 23px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -119,7 +119,7 @@ if uploaded_file:
                     title="지사별 서비스 평가 평균 점수",
                     height=550  # 차트 높이 20% 확대
                 )
-                fig2.update_layout(font=dict(size=15)) # 차트 축/범례 글자 크기 확대
+                fig2.update_layout(font=dict(size=18)) # 차트 축/범례 글자 크기 확대
                 st.plotly_chart(fig2, use_container_width=True)
 
         # [오른쪽] 미입력 건수 vs 총 점수
@@ -136,7 +136,7 @@ if uploaded_file:
                     title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)",
                     height=550  # 차트 높이 20% 확대
                 )
-                fig1.update_layout(font=dict(size=15)) # 차트 축/범례 글자 크기 확대
+                fig1.update_layout(font=dict(size=18)) # 차트 축/범례 글자 크기 확대
                 st.plotly_chart(fig1, use_container_width=True)
 
         # ------------------ 2. 표 출력을 위한 데이터 서식 적용 ------------------
