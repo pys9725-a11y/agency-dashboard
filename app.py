@@ -82,8 +82,12 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
+        # M열의 '점수(점)' 항목을 '점수'라는 이름으로 변경
+        if '점수(점)' in df.columns:
+            df = df.rename(columns={'점수(점)': '점수'})
+        
         # 주요 수치 데이터 숫자로 강제 변환
-        numeric_cols = ['총 점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
+        numeric_cols = ['총 점수', '점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
                         '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
                         '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
         for col in numeric_cols:
@@ -106,12 +110,13 @@ if uploaded_file:
         # [왼쪽] 지사별 평균 서비스 점수
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
-            if '지사' in df.columns and '총 점수' in df.columns:
-                branch_avg = df.groupby("지사", as_index=False)['총 점수'].mean()
+            score_col = '점수' if '점수' in df.columns else '총 점수'
+            if '지사' in df.columns and score_col in df.columns:
+                branch_avg = df.groupby("지사", as_index=False)[score_col].mean()
                 fig2 = px.bar(
                     branch_avg, 
                     x="지사", 
-                    y="총 점수", 
+                    y=score_col, 
                     color="지사",
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
@@ -124,10 +129,10 @@ if uploaded_file:
 
         # [오른쪽] 미입력 건수 vs 총 점수
         with right_col:
-            st.subheader("💡 미입력 건수 vs 총 점수")
-            if '미입력' in df.columns and '총 점수' in df.columns:
+            st.subheader("💡 미입력 건수 vs 점수")
+            if '미입력' in df.columns and score_col in df.columns:
                 fig1 = px.scatter(
-                    df, x="미입력", y="총 점수", 
+                    df, x="미입력", y=score_col, 
                     color="지사" if "지사" in df.columns else None,
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
@@ -172,17 +177,17 @@ if uploaded_file:
         with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                top_unentered = display_df.sort_values(by='미입력', ascending=False)[
-                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
-                ].head(10)
+                # 방문율 항목을 '점수' 항목으로 변경
+                unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '점수', '총 점수'] if c in display_df.columns]
+                top_unentered = display_df.sort_values(by='미입력', ascending=False)[unentered_cols].head(10)
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[
-                    [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
-                ].head(10)
+                # 방문율 항목을 '점수' 항목으로 변경
+                dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
+                top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[dissatisfied_cols].head(10)
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 4. 지사별 대리점 상세 조회 ------------------
@@ -198,7 +203,7 @@ if uploaded_file:
             filtered_unentered = display_df if selected_branch_unentered == "전체" else display_df[display_df['지사'] == selected_branch_unentered]
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
+                target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '점수', '총 점수'] if c in display_df.columns]
                 unentered_result = filtered_unentered.sort_values(by='미입력', ascending=False)[target_cols]
                 st.dataframe(unentered_result, use_container_width=True, hide_index=True, height=430)
 
@@ -208,7 +213,7 @@ if uploaded_file:
             filtered_dissatisfied = display_df if selected_branch_dissatisfied == "전체" else display_df[display_df['지사'] == selected_branch_dissatisfied]
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
+                target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
                 dissatisfied_result = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols]
                 st.dataframe(dissatisfied_result, use_container_width=True, hide_index=True, height=430)
 
