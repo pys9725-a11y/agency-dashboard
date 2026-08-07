@@ -194,7 +194,7 @@ if uploaded_file:
 
         # [왼쪽] 선택 지사의 미입력 대리점 전체 목록
         with col_select_a:
-            selected_branch_unentered = st.selectbox("미입력 대리점 조회(지사 선택)", branch_list, key="select_unentered")
+            selected_branch_unentered = st.selectbox("미입력 대리점 조회 (지사 선택)", branch_list, key="select_unentered")
             filtered_unentered = display_df if selected_branch_unentered == "전체" else display_df[display_df['지사'] == selected_branch_unentered]
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
@@ -204,7 +204,7 @@ if uploaded_file:
 
         # [오른쪽] 선택 지사의 서비스 불만율 대리점 전체 목록
         with col_select_b:
-            selected_branch_dissatisfied = st.selectbox("서비스 불만율 대리점 조회(지사 선택)", branch_list, key="select_dissatisfied")
+            selected_branch_dissatisfied = st.selectbox("서비스 불만율 대리점 조회 (지사 선택)", branch_list, key="select_dissatisfied")
             filtered_dissatisfied = display_df if selected_branch_dissatisfied == "전체" else display_df[display_df['지사'] == selected_branch_dissatisfied]
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
