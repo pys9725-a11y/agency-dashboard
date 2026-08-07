@@ -104,17 +104,18 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
-        # 엑셀 열 인덱스 기준 매핑
-        if len(df.columns) > 26 and df.columns[26] == '점수(점)':
-            df.rename(columns={df.columns[26]: '불만 점수'}, inplace=True)
-        elif '점수(점)' in df.columns:
-            df.rename(columns={'점수(점)': '불만 점수'}, inplace=True)
-
-        if len(df.columns) > 15 and df.columns[15] == '점수(점)':
-            df.rename(columns={df.columns[15]: '예약 점수'}, inplace=True)
-
-        if len(df.columns) > 20 and df.columns[20] == '점수(점)':
-            df.rename(columns={df.columns[20]: '처리시간 점수'}, inplace=True)
+        # 엑셀 열 절대 위치(Index) 기준 이름 변경 (중복 이름인 '점수(점)' 충돌 완벽 방지)
+        # P4  (16번째 열 - index 15): 예약 점수
+        # U4  (21번째 열 - index 20): 처리시간 점수
+        # AA4 (27번째 열 - index 26): 불만 점수
+        cols = list(df.columns)
+        if len(cols) > 15:
+            cols[15] = '예약 점수'
+        if len(cols) > 20:
+            cols[20] = '처리시간 점수'
+        if len(cols) > 26:
+            cols[26] = '불만 점수'
+        df.columns = cols
 
         # 주요 수치 데이터 숫자로 강제 변환
         numeric_cols = ['총 점수', '불만 점수', '예약 점수', '처리시간 점수', '총접수건', '총접수', '미방문', '미입력', 
@@ -223,12 +224,13 @@ if uploaded_file:
                 top_dissatisfied = top_dissatisfied.rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
 
-        # [행 2] 1시간 이내 예약율 & 평균처리시간
+        # [행 2] 약속시간입력율 TOP 10 & 평균처리시간 TOP 10
         col_c, col_d = st.columns(2)
 
         with col_c:
-            st.subheader("📅 1시간 이내 예약율 상위 대리점 (TOP 10)")
+            st.subheader("📅 약속시간입력율 TOP 10")
             if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
+                # 총 점수 바로 좌측에 '예약 점수'를 위치시킨 후 '점수'로 변경
                 reservation_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
                 top_reservation = display_df.sort_values(by='예약율(%)', ascending=False)[reservation_cols].head(10)
                 top_reservation = top_reservation.rename(columns={'예약 점수': '점수'})
@@ -238,7 +240,6 @@ if uploaded_file:
             st.subheader("⏱️ 평균처리시간 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and s_col_name:
                 time_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                # 초 단위로 변환된 보조 컬럼(_s_seconds) 기준으로 오류 없이 안전하게 정렬
                 sorted_idx = df.sort_values(by='_s_seconds', ascending=False).index
                 top_time = display_df.loc[sorted_idx, time_cols].head(10)
                 top_time = top_time.rename(columns={'처리시간 점수': '점수'})
@@ -271,11 +272,11 @@ if uploaded_file:
                 res = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols].rename(columns={'불만 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
-        # [상세 조회 행 2] 1시간 이내 예약율 & 평균처리시간
+        # [상세 조회 행 2] 약속시간입력율 & 평균처리시간
         col_select_c, col_select_d = st.columns(2)
 
         with col_select_c:
-            selected_branch_res = st.selectbox("1시간 이내 예약율 대리점 조회 (지사 선택)", branch_list, key="select_res")
+            selected_branch_res = st.selectbox("약속시간입력율 대리점 조회 (지사 선택)", branch_list, key="select_res")
             filtered_res = display_df if selected_branch_res == "전체" else display_df[display_df['지사'] == selected_branch_res]
             
             if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
@@ -297,7 +298,6 @@ if uploaded_file:
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         
-        # 화면 표 출력에 불필요한 보조 컬럼 제거
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
         
         if '지사' in clean_display_df.columns:
