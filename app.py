@@ -221,64 +221,60 @@ if uploaded_file:
         with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                valid_unentered = display_df.dropna(subset=['미입력'])
-                unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in valid_unentered.columns]
-                top_unentered = valid_unentered.sort_values(by='미입력', ascending=False)[unentered_cols].head(10)
-                top_unentered = top_unentered.rename(columns={'불만 점수': '점수'})
+                valid_unentered_idx = df.dropna(subset=['미입력']).sort_values(by='미입력', ascending=False).index
+                unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
+                top_unentered = display_df.loc[valid_unentered_idx, unentered_cols].head(10).rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                valid_dissatisfied = display_df.dropna(subset=['서비스불만율(%)'])
-                dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in valid_dissatisfied.columns]
-                top_dissatisfied = valid_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[dissatisfied_cols].head(10)
-                top_dissatisfied = top_dissatisfied.rename(columns={'불만 점수': '점수'})
+                valid_dissatisfied_idx = df.dropna(subset=['서비스불만율(%)']).sort_values(by='서비스불만율(%)', ascending=False).index
+                dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
+                top_dissatisfied = display_df.loc[valid_dissatisfied_idx, dissatisfied_cols].head(10).rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
 
-        # [행 2] 약속시간입력율 & 평균처리시간 (TOP 10 / LOW 10 탭 구분)
+        # [행 2] 약속시간입력율 & 평균처리시간 (점수 기준 TOP 10 / LOW 10 탭 구분)
         col_c, col_d = st.columns(2)
 
         with col_c:
             st.subheader("📅 약속시간입력율 현황")
-            tab_res_top, tab_res_low = st.tabs(["🔝 TOP 10 (상위)", "🔻 LOW 10 (하위)"])
+            tab_res_top, tab_res_low = st.tabs(["🔝 TOP 10 (점수 상위)", "🔻 LOW 10 (점수 하위)"])
             
-            if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
-                valid_reservation = display_df.dropna(subset=['예약율(%)'])
-                reservation_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in valid_reservation.columns]
+            if '방문 대리점' in df.columns and '예약 점수' in df.columns:
+                reservation_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
+                valid_res_df = df.dropna(subset=['예약 점수'])
                 
-                # TOP 10 (내림차순 정렬)
+                # TOP 10 (5번째 열: '예약 점수' 내림차순)
                 with tab_res_top:
-                    top_reservation = valid_reservation.sort_values(by='예약율(%)', ascending=False)[reservation_cols].head(10)
-                    top_reservation = top_reservation.rename(columns={'예약 점수': '점수'})
-                    st.dataframe(top_reservation, use_container_width=True, hide_index=True, height=410)
+                    top_res_idx = valid_res_df.sort_values(by='예약 점수', ascending=False).index
+                    top_res = display_df.loc[top_res_idx, reservation_cols].head(10).rename(columns={'예약 점수': '점수'})
+                    st.dataframe(top_res, use_container_width=True, hide_index=True, height=410)
                 
-                # LOW 10 (오름차순 정렬)
+                # LOW 10 (5번째 열: '예약 점수' 오름차순)
                 with tab_res_low:
-                    low_reservation = valid_reservation.sort_values(by='예약율(%)', ascending=True)[reservation_cols].head(10)
-                    low_reservation = low_reservation.rename(columns={'예약 점수': '점수'})
-                    st.dataframe(low_reservation, use_container_width=True, hide_index=True, height=410)
+                    low_res_idx = valid_res_df.sort_values(by='예약 점수', ascending=True).index
+                    low_res = display_df.loc[low_res_idx, reservation_cols].head(10).rename(columns={'예약 점수': '점수'})
+                    st.dataframe(low_res, use_container_width=True, hide_index=True, height=410)
 
         with col_d:
             st.subheader("⏱️ 평균처리시간 현황")
-            tab_time_top, tab_time_low = st.tabs(["🔝 TOP 10 (상위)", "🔻 LOW 10 (하위)"])
+            tab_time_top, tab_time_low = st.tabs(["🔝 TOP 10 (점수 상위)", "🔻 LOW 10 (점수 하위)"])
             
-            if '방문 대리점' in df.columns and s_col_name:
-                valid_time_df = df.dropna(subset=['_s_seconds'])
+            if '방문 대리점' in df.columns and '처리시간 점수' in df.columns and s_col_name:
                 time_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
+                valid_time_df = df.dropna(subset=['처리시간 점수'])
                 
-                # TOP 10 (소요시간 긴 순서 / 내림차순)
+                # TOP 10 (4번째 열: '처리시간 점수' 내림차순 - 점수 높은 순)
                 with tab_time_top:
-                    sorted_top_idx = valid_time_df.sort_values(by='_s_seconds', ascending=False).index
-                    top_time = display_df.loc[sorted_top_idx, time_cols].head(10)
-                    top_time = top_time.rename(columns={'처리시간 점수': '점수'})
+                    top_time_idx = valid_time_df.sort_values(by='처리시간 점수', ascending=False).index
+                    top_time = display_df.loc[top_time_idx, time_cols].head(10).rename(columns={'처리시간 점수': '점수'})
                     st.dataframe(top_time, use_container_width=True, hide_index=True, height=410)
                 
-                # LOW 10 (소요시간 짧은 순서 / 오름차순)
+                # LOW 10 (4번째 열: '처리시간 점수' 오름차순 - 점수 낮은 순)
                 with tab_time_low:
-                    sorted_low_idx = valid_time_df.sort_values(by='_s_seconds', ascending=True).index
-                    low_time = display_df.loc[sorted_low_idx, time_cols].head(10)
-                    low_time = low_time.rename(columns={'처리시간 점수': '점수'})
+                    low_time_idx = valid_time_df.sort_values(by='처리시간 점수', ascending=True).index
+                    low_time = display_df.loc[low_time_idx, time_cols].head(10).rename(columns={'처리시간 점수': '점수'})
                     st.dataframe(low_time, use_container_width=True, hide_index=True, height=410)
 
         # ------------------ 4. 지사별 대리점 상세 조회 ------------------
@@ -296,7 +292,8 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
-                res = filtered_unentered.dropna(subset=['미입력']).sort_values(by='미입력', ascending=False)[target_cols].rename(columns={'불만 점수': '점수'})
+                valid_idx = df.loc[filtered_unentered.index].dropna(subset=['미입력']).sort_values(by='미입력', ascending=False).index
+                res = filtered_unentered.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         with col_select_b:
@@ -305,7 +302,8 @@ if uploaded_file:
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
-                res = filtered_dissatisfied.dropna(subset=['서비스불만율(%)']).sort_values(by='서비스불만율(%)', ascending=False)[target_cols].rename(columns={'불만 점수': '점수'})
+                valid_idx = df.loc[filtered_dissatisfied.index].dropna(subset=['서비스불만율(%)']).sort_values(by='서비스불만율(%)', ascending=False).index
+                res = filtered_dissatisfied.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         # [상세 조회 행 2] 약속시간입력율 & 평균처리시간
@@ -315,20 +313,20 @@ if uploaded_file:
             selected_branch_res = st.selectbox("약속시간입력율 대리점 조회 (지사 선택)", branch_list, key="select_res")
             filtered_res = display_df if selected_branch_res == "전체" else display_df[display_df['지사'] == selected_branch_res]
             
-            if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
+            if '방문 대리점' in df.columns and '예약 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
-                res = filtered_res.dropna(subset=['예약율(%)']).sort_values(by='예약율(%)', ascending=False)[target_cols].rename(columns={'예약 점수': '점수'})
+                valid_idx = df.loc[filtered_res.index].dropna(subset=['예약 점수']).sort_values(by='예약 점수', ascending=False).index
+                res = filtered_res.loc[valid_idx, target_cols].rename(columns={'예약 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         with col_select_d:
             selected_branch_time = st.selectbox("평균처리시간 대리점 조회 (지사 선택)", branch_list, key="select_time")
             filtered_time = display_df if selected_branch_time == "전체" else display_df[display_df['지사'] == selected_branch_time]
             
-            if '방문 대리점' in df.columns and s_col_name:
+            if '방문 대리점' in df.columns and '처리시간 점수' in df.columns and s_col_name:
                 target_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                valid_filtered = df.loc[filtered_time.index].dropna(subset=['_s_seconds'])
-                sort_idx = valid_filtered.sort_values(by='_s_seconds', ascending=False).index
-                res = filtered_time.loc[sort_idx, target_cols].rename(columns={'처리시간 점수': '점수'})
+                valid_idx = df.loc[filtered_time.index].dropna(subset=['처리시간 점수']).sort_values(by='처리시간 점수', ascending=False).index
+                res = filtered_time.loc[valid_idx, target_cols].rename(columns={'처리시간 점수': '점수'})
                 st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 5. 전체 대리점 상세 조회 ------------------
