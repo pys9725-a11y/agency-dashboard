@@ -175,7 +175,6 @@ if uploaded_file:
 
         # ------------------ 화면 1: 전체 / 지사 대시보드 ------------------
         if view_mode == "📊 전체/지사 대시보드":
-            # 지사 필터 적용 데이터
             if selected_sidebar_branch != "전체" and '지사' in df.columns:
                 filtered_main_df = df[df['지사'] == selected_sidebar_branch]
             else:
@@ -376,7 +375,7 @@ if uploaded_file:
 
                     st.markdown("---")
 
-                    # 3. 평균 비교 차트 (대리점 vs 지사평균 vs 전체평균)
+                    # 3. 평균 비교 차트 (순서 변경: 1.전체평균 -> 2.지사평균 -> 3.해당대리점)
                     st.markdown("### 📊 평균 대비 세부 항목 점수 비교")
                     
                     score_cols = ['조치입력 점수', '예약 점수', '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수']
@@ -387,19 +386,79 @@ if uploaded_file:
                         branch_avg_scores = [branch_agencies[c].mean() for c in available_score_cols]
                         total_avg_scores = [df[c].mean() for c in available_score_cols]
 
-                        fig_comp = go.Figure()
-                        fig_comp.add_trace(go.Bar(x=available_score_cols, y=agency_scores, name=f"{selected_agency}", marker_color='#1f77b4', text=[f"{v:.2f}" for v in agency_scores], textposition='auto'))
-                        fig_comp.add_trace(go.Bar(x=available_score_cols, y=branch_avg_scores, name=f"{agency_branch} 평균", marker_color='#ff7f0e', text=[f"{v:.2f}" for v in branch_avg_scores], textposition='auto'))
-                        fig_comp.add_trace(go.Bar(x=available_score_cols, y=total_avg_scores, name="전체 평균", marker_color='#2ca02c', text=[f"{v:.2f}" for v in total_avg_scores], textposition='auto'))
+                        # Y축 상단 마진 자동 산출 (숫자 라벨 잘림 방지)
+                        all_vals = total_avg_scores + branch_avg_scores + agency_scores
+                        max_y = (max(all_vals) * 1.18) if all_vals else 25
 
+                        fig_comp = go.Figure()
+
+                        # 1. 전체 평균 (Base line - Gray)
+                        fig_comp.add_trace(go.Bar(
+                            x=available_score_cols,
+                            y=total_avg_scores,
+                            name="전체 평균",
+                            marker_color='#94A3B8',
+                            text=[f"{v:.2f}" for v in total_avg_scores],
+                            textposition='outside',
+                            textfont=dict(size=15, weight='bold')
+                        ))
+
+                        # 2. 해당 지사 평균 (Regional - Amber/Orange)
+                        fig_comp.add_trace(go.Bar(
+                            x=available_score_cols,
+                            y=branch_avg_scores,
+                            name=f"{agency_branch} 평균",
+                            marker_color='#F59E0B',
+                            text=[f"{v:.2f}" for v in branch_avg_scores],
+                            textposition='outside',
+                            textfont=dict(size=15, weight='bold')
+                        ))
+
+                        # 3. 해당 대리점 (Hero Target - Royal Blue 강조)
+                        fig_comp.add_trace(go.Bar(
+                            x=available_score_cols,
+                            y=agency_scores,
+                            name=f"{selected_agency}",
+                            marker_color='#2563EB',
+                            text=[f"{v:.2f}" for v in agency_scores],
+                            textposition='outside',
+                            textfont=dict(size=16, weight='bold')
+                        ))
+
+                        # 레이아웃 스타일 설정
                         fig_comp.update_layout(
                             barmode='group',
-                            title=f"<b>[{selected_agency}] 주요 항목별 점수 비교</b>",
-                            height=550,
-                            font=dict(size=20),
-                            xaxis=dict(tickfont=dict(size=18)),
-                            yaxis=dict(title="점수", tickfont=dict(size=18)),
-                            legend=dict(font=dict(size=18))
+                            bargap=0.22,
+                            bargroupgap=0.08,
+                            title=dict(
+                                text=f"<b>[{selected_agency}] 주요 항목별 점수 비교</b>",
+                                font=dict(size=24, color='#1E293B')
+                            ),
+                            height=580,
+                            margin=dict(l=20, r=20, t=60, b=40),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            font=dict(size=18, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
+                            xaxis=dict(
+                                tickfont=dict(size=17, color='#334155'),
+                                showgrid=False
+                            ),
+                            yaxis=dict(
+                                title="점수",
+                                title_font=dict(size=18, color='#334155'),
+                                tickfont=dict(size=16, color='#64748B'),
+                                gridcolor='#F1F5F9',
+                                range=[0, max_y]
+                            ),
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="right",
+                                x=1,
+                                font=dict(size=17),
+                                bgcolor='rgba(255,255,255,0.8)'
+                            )
                         )
                         st.plotly_chart(fig_comp, use_container_width=True)
 
