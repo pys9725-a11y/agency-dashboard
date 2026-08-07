@@ -8,6 +8,44 @@ st.title("📊 대리점 서비스 평가 및 데이터 입력 현황")
 # 엑셀 파일 업로드
 uploaded_file = st.file_uploader("월별 서비스 평가 엑셀 파일을 업로드하세요", type=["xlsx"])
 
+# 시간 변환 함수 (S열 처리용: HH:MM:SS -> X시간 Y분)
+def format_time_duration(val):
+    if pd.isna(val) or val == "":
+        return ""
+    try:
+        # datetime.time 객체 또는 string, timedelta 형태 대응
+        if isinstance(val, str):
+            parts = val.split(":")
+            if len(parts) >= 2:
+                hours = int(parts[0])
+                minutes = int(parts[1])
+            else:
+                return str(val)
+        elif hasattr(val, 'hour') and hasattr(val, 'minute'):
+            hours = val.hour
+            minutes = val.minute
+        elif isinstance(val, pd.Timedelta):
+            total_seconds = int(val.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+        else:
+            # datetime 객체인 경우
+            dt = pd.to_datetime(val)
+            hours = dt.hour
+            minutes = dt.minute
+
+        # 문자열 조립
+        if hours > 0 and minutes > 0:
+            return f"{hours}시간 {minutes}분"
+        elif hours > 0 and minutes == 0:
+            return f"{hours}시간"
+        elif hours == 0 and minutes > 0:
+            return f"{minutes}분"
+        else:
+            return "0분"
+    except Exception:
+        return str(val)
+
 if uploaded_file:
     try:
         # 엑셀의 '평가' 시트, 4번째 행(header=3)을 열 제목으로 읽기
@@ -69,12 +107,16 @@ if uploaded_file:
                 )
                 st.plotly_chart(fig1, use_container_width=True)
 
-        # ------------------ 2. 표 출력을 위한 데이터 서식 적용 (소수점 2자리, %, 시간) ------------------
+        # ------------------ 2. 표 출력을 위한 데이터 서식 적용 ------------------
         display_df = df.copy()
         
-        # 1) % 변환 처리 (F열 입력율(%), AC열 관련 항목 포함)
+        # 1) S열(19번째 열, index=18) 'X시간 Y분' 포맷 적용
+        if len(display_df.columns) > 18:
+            s_col_name = display_df.columns[18]
+            display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
+
+        # 2) % 변환 처리 (F열 입력율(%), AC열 관련 항목 포함)
         percent_cols = ['입력율(%)', '방문율', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
-        # 28번째 열(AC열, 0부터 시작하므로 28번)의 컬럼명 확인 및 % 적용 목록 추가
         if len(display_df.columns) > 28:
             ac_col_name = display_df.columns[28]
             if ac_col_name not in percent_cols:
@@ -83,19 +125,8 @@ if uploaded_file:
         for p_col in percent_cols:
             if p_col in display_df.columns:
                 display_df[p_col] = display_df[p_col].apply(
-                    lambda x: f"{x*100:.2f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.2f}%" if pd.notnull(x) else "")
+                    lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) and x <= 1.0 else (f"{x:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else "")
                 )
-
-        # 2) 시간 데이터 처리 (시:분만 표현)
-        for col in display_df.columns:
-            if pd.api.types.is_datetime64_any_dtype(display_df[col]) or '시간' in col or '시각' in col:
-                try:
-                    display_df[col] = pd.to_datetime(display_df[col], errors='ignore')
-                    display_df[col] = display_df[col].apply(
-                        lambda x: x.strftime('%H:%M') if pd.notnull(x) and hasattr(x, 'strftime') else x
-                    )
-                except Exception:
-                    pass
 
         # 3) 기타 일반 수치 데이터 소수점 2자리 포맷팅
         for col in display_df.select_dtypes(include=['float', 'float64']).columns:
