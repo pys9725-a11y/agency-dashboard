@@ -24,27 +24,7 @@ if uploaded_file:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
 
-        # ------------------ 1. 상단 핵심 지표 (KPI) ------------------
-        col1, col2, col3, col4 = st.columns(4)
-        
-        if '총 점수' in df.columns and not df['총 점수'].dropna().empty:
-            col1.metric("전사 평균 점수", f"{df['총 점수'].mean():.1f}점")
-            
-        if '미입력' in df.columns:
-            col2.metric("총 미입력 건수", f"{int(df['미입력'].sum()):,}건")
-            
-        if '입력율(%)' in df.columns and not df['입력율(%)'].dropna().empty:
-            input_full_ratio = (df['입력율(%)'].apply(lambda x: x*100 if x <= 1 else x) >= 100).mean() * 100
-            col3.metric("입력률 100% 대리점 비중", f"{input_full_ratio:.1f}%")
-            
-        if '방문율' in df.columns and not df['방문율'].dropna().empty:
-            avg_visit = df['방문율'].mean()
-            visit_val = avg_visit * 100 if avg_visit <= 1 else avg_visit
-            col4.metric("평균 방문율 (AI열)", f"{visit_val:.1f}%")
-        
-        st.markdown("---")
-        
-        # ------------------ 2. 사장님 보고용 시각화 ------------------
+        # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
         
         with left_col:
@@ -66,10 +46,10 @@ if uploaded_file:
                 fig2 = px.bar(branch_avg, x="지사", y="총 점수", color="총 점수", text_auto='.1f')
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # ------------------ 3. 표 출력을 위한 데이터 % 포맷팅 ------------------
+        # ------------------ 2. 표 출력을 위한 데이터 % 포맷팅 ------------------
         display_df = df.copy()
         
-        # AI열(방문율) 및 백분율 컬럼 % 변환 처리 (소수점 0.77 -> 77.0% / 77 -> 77.0%)
+        # AI열(방문율) 및 백분율 컬럼 % 변환 처리
         percent_cols = ['방문율', '입력율(%)', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
         for p_col in percent_cols:
             if p_col in display_df.columns:
@@ -77,7 +57,7 @@ if uploaded_file:
                     lambda x: f"{x*100:.1f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.1f}%" if pd.notnull(x) else "")
                 )
 
-        # ------------------ 4. 집중 관리 대상 모니터링 ------------------
+        # ------------------ 3. 집중 관리 대상 모니터링 ------------------
         col_a, col_b = st.columns(2)
         
         with col_a:
@@ -96,7 +76,7 @@ if uploaded_file:
                 ].head(10)
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True)
 
-        # ------------------ 5. 전체 대리점 상세 조회 ------------------
+        # ------------------ 4. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         if '지사' in display_df.columns:
