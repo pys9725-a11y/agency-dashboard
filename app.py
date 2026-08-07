@@ -87,7 +87,7 @@ if uploaded_file:
             df = df.rename(columns={'점수(점)': '점수'})
         
         # 주요 수치 데이터 숫자로 강제 변환
-        numeric_cols = ['총 점수', '점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
+        numeric_cols = ['총 점수', '점수', '총접수건', '총접수', '미방문', '미입력', '방문', '입력건', 
                         '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
                         '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
         for col in numeric_cols:
@@ -104,10 +104,10 @@ if uploaded_file:
             branch_color_map = None
             branch_order = None
 
-        # ------------------ 1. 사장님 보고용 시각화 (D4: 총 점수 기준) ------------------
+        # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수 (총 점수)
+        # [왼쪽] 지사별 평균 서비스 점수 (D4: 총 점수)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
             if '지사' in df.columns and '총 점수' in df.columns:
@@ -126,18 +126,20 @@ if uploaded_file:
                 fig2.update_layout(font=dict(size=15))
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # [오른쪽] 미입력 건수 vs 총 점수
+        # [오른쪽] 총 점수 vs 총접수건 (G4)
         with right_col:
-            st.subheader("💡 미입력 건수 vs 총 점수")
-            if '미입력' in df.columns and '총 점수' in df.columns:
+            st.subheader("💡 총 점수 vs 총접수건")
+            # 엑셀 G4 열 이름 호환성 처리 (총접수건 또는 총접수)
+            total_cnt_col = '총접수건' if '총접수건' in df.columns else ('총접수' if '총접수' in df.columns else None)
+            
+            if total_cnt_col and '총 점수' in df.columns:
                 fig1 = px.scatter(
-                    df, x="미입력", y="총 점수", 
+                    df, x=total_cnt_col, y="총 점수", 
                     color="지사" if "지사" in df.columns else None,
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
-                    size="총접수건" if "총접수건" in df.columns else None,
-                    title="미입력 건수가 총 점수 하락에 미치는 영향 (점 크기: 총접수건)",
+                    title="총접수건 대비 총 점수 분포",
                     height=550
                 )
                 fig1.update_layout(font=dict(size=15))
