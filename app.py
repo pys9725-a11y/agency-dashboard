@@ -32,9 +32,6 @@ st.markdown("""
             font-size: 22px !important;
             font-weight: bold !important;
         }
-        div[role="radiogroup"] label span {
-            font-size: 24px !important;
-        }
 
         /* 5. 파일 업로더 글자 크기 */
         .stFileUploader label {
@@ -260,45 +257,40 @@ if uploaded_file:
             if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-        # ------------------ 8개 항목 전체 현황 (8개 탭) ------------------
+        # ------------------ 8개 항목 전체 현황 (풀어서 펼친 형태) ------------------
         st.markdown("---")
         st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
-        tabs = st.tabs([
-            "1. 조치입력 점수", "2. 조치정보입력율", "3. 약속시간 점수", "4. 처리시간 점수",
-            "5. 재방문 점수", "6. 불만 점수", "7. 독촉 점수", "8. 고객만족도 점수"
-        ])
-
         indicators_info = [
-            ("조치입력 점수", ['지사', '방문 대리점', '총접수건', '조치입력 점수', '총 점수']),
-            ("입력율(%)", ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
-            ("예약 점수", ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
-            ("처리시간 점수", ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
-            ("재방문 점수", ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
-            ("불만 점수", ['지사', '방문 대리점', '총접수건', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수']),
-            ("독촉 점수", ['지사', '방문 대리점', '총접수건', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수']),
-            ("고객만족도 점수", ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
+            ("1. 조치입력 점수", '조치입력 점수', ['지사', '방문 대리점', '총접수건', '조치입력 점수', '총 점수']),
+            ("2. 조치정보입력율", '입력율(%)', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
+            ("3. 약속시간 점수", '예약 점수', ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
+            ("4. 처리시간 점수", '처리시간 점수', ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
+            ("5. 재방문 점수", '재방문 점수', ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
+            ("6. 불만 점수", '불만 점수', ['지사', '방문 대리점', '총접수건', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수']),
+            ("7. 독촉 점수", '독촉 점수', ['지사', '방문 대리점', '총접수건', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수']),
+            ("8. 고객만족도 점수", '고객만족도 점수', ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
         ]
 
-        for i, (col_key, target_cols) in enumerate(indicators_info):
-            with tabs[i]:
-                sub_cols = [c for c in target_cols if c in display_df.columns]
-                if col_key in filtered_main_df.columns:
-                    sort_col = col_key
-                    valid_sub_df = filtered_main_df.dropna(subset=[sort_col])
-                    
-                    top_tab, low_tab = st.tabs(["🔝 TOP 20 (상위)", "🔻 LOW 20 (하위)"])
-                    with top_tab:
-                        idx_top = valid_sub_df.sort_values(by=[sort_col, '총 점수'], ascending=[False, False]).index
-                        st.dataframe(display_df.loc[idx_top, sub_cols].head(20), use_container_width=True, hide_index=True, height=400)
-                    with low_tab:
-                        idx_low = valid_sub_df.sort_values(by=[sort_col, '총 점수'], ascending=[True, False]).index
-                        st.dataframe(display_df.loc[idx_low, sub_cols].head(20), use_container_width=True, hide_index=True, height=400)
-                else:
-                    st.info(f"'{col_key}' 관련 데이터 항목을 찾을 수 없습니다.")
+        for title_name, col_key, target_cols in indicators_info:
+            st.markdown(f"#### 📌 {title_name}")
+            sub_cols = [c for c in target_cols if c in display_df.columns]
+            
+            if col_key in filtered_main_df.columns:
+                valid_sub_df = filtered_main_df.dropna(subset=[col_key])
+                
+                top_tab, low_tab = st.tabs(["🔝 TOP 20 (상위)", "🔻 LOW 20 (하위)"])
+                with top_tab:
+                    idx_top = valid_sub_df.sort_values(by=[col_key, '총 점수'], ascending=[False, False]).index
+                    st.dataframe(display_df.loc[idx_top, sub_cols].head(20), use_container_width=True, hide_index=True, height=350)
+                with low_tab:
+                    idx_low = valid_sub_df.sort_values(by=[col_key, '총 점수'], ascending=[True, False]).index
+                    st.dataframe(display_df.loc[idx_low, sub_cols].head(20), use_container_width=True, hide_index=True, height=350)
+            else:
+                st.info(f"'{title_name}' 관련 데이터 항목을 찾을 수 없습니다.")
+            st.markdown("---")
 
         # ------------------ 대리점별 상세 리포트 영역 ------------------
-        st.markdown("---")
         if not selected_agency:
             st.warning("상단 검색 창에서 대리점을 선택해 주세요.")
         else:
