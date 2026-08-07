@@ -244,10 +244,10 @@ if uploaded_file:
                 valid_act_df = df.dropna(subset=['조치입력 점수'])
                 
                 with tab_act_top:
-                    idx = valid_act_df.sort_values(by='조치입력 점수', ascending=False).index
+                    idx = valid_act_df.sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, act_cols].head(20).rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_act_low:
-                    idx = valid_act_df.sort_values(by='조치입력 점수', ascending=True).index
+                    idx = valid_act_df.sort_values(by=['조치입력 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, act_cols].head(20).rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         with col_1b:
@@ -259,10 +259,10 @@ if uploaded_file:
                 valid_unentered_df = df.dropna(subset=['불만 점수'])
                 
                 with tab_unentered_top:
-                    idx = valid_unentered_df.sort_values(by='불만 점수', ascending=False).index
+                    idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_unentered_low:
-                    idx = valid_unentered_df.sort_values(by='불만 점수', ascending=True).index
+                    idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         # [행 2] 약속시간입력율 & 평균처리시간
@@ -277,10 +277,10 @@ if uploaded_file:
                 valid_res_df = df.dropna(subset=['예약 점수'])
                 
                 with tab_res_top:
-                    idx = valid_res_df.sort_values(by='예약 점수', ascending=False).index
+                    idx = valid_res_df.sort_values(by=['예약 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, reservation_cols].head(20).rename(columns={'예약 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_res_low:
-                    idx = valid_res_df.sort_values(by='예약 점수', ascending=True).index
+                    idx = valid_res_df.sort_values(by=['예약 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, reservation_cols].head(20).rename(columns={'예약 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         with col_2b:
@@ -292,10 +292,10 @@ if uploaded_file:
                 valid_time_df = df.dropna(subset=['처리시간 점수'])
                 
                 with tab_time_top:
-                    idx = valid_time_df.sort_values(by='처리시간 점수', ascending=False).index
+                    idx = valid_time_df.sort_values(by=['처리시간 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, time_cols].head(20).rename(columns={'처리시간 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_time_low:
-                    idx = valid_time_df.sort_values(by='처리시간 점수', ascending=True).index
+                    idx = valid_time_df.sort_values(by=['처리시간 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, time_cols].head(20).rename(columns={'처리시간 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         # [행 3] 재방문율 & 서비스 불만율
@@ -310,10 +310,10 @@ if uploaded_file:
                 valid_re_df = df.dropna(subset=['재방문 점수'])
                 
                 with tab_re_top:
-                    idx = valid_re_df.sort_values(by='재방문 점수', ascending=False).index
+                    idx = valid_re_df.sort_values(by=['재방문 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, re_cols].head(20).rename(columns={'재방문 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_re_low:
-                    idx = valid_re_df.sort_values(by='재방문 점수', ascending=True).index
+                    idx = valid_re_df.sort_values(by=['재방문 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, re_cols].head(20).rename(columns={'재방문 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         with col_3b:
@@ -325,10 +325,10 @@ if uploaded_file:
                 valid_dissat_df = df.dropna(subset=['불만 점수'])
                 
                 with tab_dissat_top:
-                    idx = valid_dissat_df.sort_values(by='불만 점수', ascending=False).index
+                    idx = valid_dissat_df.sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, dissatisfied_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_dissat_low:
-                    idx = valid_dissat_df.sort_values(by='불만 점수', ascending=True).index
+                    idx = valid_dissat_df.sort_values(by=['불만 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, dissatisfied_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         # [행 4] 독촉율 & 고객만족도
@@ -343,10 +343,10 @@ if uploaded_file:
                 valid_urge_df = df.dropna(subset=['독촉 점수'])
                 
                 with tab_urge_top:
-                    idx = valid_urge_df.sort_values(by='독촉 점수', ascending=False).index
+                    idx = valid_urge_df.sort_values(by=['독촉 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, urge_cols].head(20).rename(columns={'독촉 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_urge_low:
-                    idx = valid_urge_df.sort_values(by='독촉 점수', ascending=True).index
+                    idx = valid_urge_df.sort_values(by=['독촉 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, urge_cols].head(20).rename(columns={'독촉 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
         with col_4b:
@@ -358,10 +358,10 @@ if uploaded_file:
                 valid_csat_df = df.dropna(subset=['고객만족도 점수'])
                 
                 with tab_csat_top:
-                    idx = valid_csat_df.sort_values(by='고객만족도 점수', ascending=False).index
+                    idx = valid_csat_df.sort_values(by=['고객만족도 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, csat_cols].head(20).rename(columns={'고객만족도 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
                 with tab_csat_low:
-                    idx = valid_csat_df.sort_values(by='고객만족도 점수', ascending=True).index
+                    idx = valid_csat_df.sort_values(by=['고객만족도 점수', '총 점수'], ascending=[True, False]).index
                     st.dataframe(display_df.loc[idx, csat_cols].head(20).rename(columns={'고객만족도 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
 
 
@@ -380,7 +380,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '조치입력 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미방문', '미입력', '방문 입력건', '입력율(%)', '조치입력 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['조치입력 점수']).sort_values(by='조치입력 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['조치입력 점수']).sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_1b:
@@ -389,7 +389,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '불만 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by='불만 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         # [상세 조회 행 2] 약속시간입력율 & 평균처리시간
@@ -401,7 +401,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '예약 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['예약 점수']).sort_values(by='예약 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['예약 점수']).sort_values(by=['예약 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'예약 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_2b:
@@ -410,7 +410,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '처리시간 점수' in df.columns and s_col_name:
                 target_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['처리시간 점수']).sort_values(by='처리시간 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['처리시간 점수']).sort_values(by=['처리시간 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'처리시간 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         # [상세 조회 행 3] 재방문율 & 서비스 불만율
@@ -422,7 +422,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '재방문 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['재방문 점수']).sort_values(by='재방문 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['재방문 점수']).sort_values(by=['재방문 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'재방문 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_3b:
@@ -431,7 +431,7 @@ if uploaded_file:
                 
             if '방문 대리점' in df.columns and '불만 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by='불만 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         # [상세 조회 행 4] 독촉율 & 고객만족도
@@ -443,7 +443,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '독촉 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['독촉 점수']).sort_values(by='독촉 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['독촉 점수']).sort_values(by=['독촉 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'독촉 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_4b:
@@ -452,7 +452,7 @@ if uploaded_file:
             
             if '방문 대리점' in df.columns and '고객만족도 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '합계', '총건', '고객만족도 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['고객만족도 점수']).sort_values(by='고객만족도 점수', ascending=False).index
+                valid_idx = df.loc[filtered.index].dropna(subset=['고객만족도 점수']).sort_values(by=['고객만족도 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'고객만족도 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 5. 전체 대리점 상세 조회 ------------------
