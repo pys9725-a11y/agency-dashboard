@@ -26,7 +26,6 @@ if uploaded_file:
 
         # ------------------ 지사별 색상 및 범례 순서 고정 ------------------
         if '지사' in df.columns:
-            # 지사 목록을 가나다순으로 정렬하여 색상 및 범례 순서 동일 적용
             unique_branches = sorted(df['지사'].dropna().unique())
             palette = px.colors.qualitative.Plotly
             branch_color_map = {branch: palette[i % len(palette)] for i, branch in enumerate(unique_branches)}
@@ -48,9 +47,9 @@ if uploaded_file:
                     x="지사", 
                     y="총 점수", 
                     color="지사",
-                    color_discrete_map=branch_color_map,  # 고정 색상
-                    category_orders=branch_order,          # 범례/X축 정렬 순서 고정
-                    text_auto='.1f',
+                    color_discrete_map=branch_color_map,
+                    category_orders=branch_order,
+                    text_auto='.2f',  # 소수점 둘째 자리 표현
                     title="지사별 서비스 평가 평균 점수"
                 )
                 st.plotly_chart(fig2, use_container_width=True)
@@ -62,24 +61,46 @@ if uploaded_file:
                 fig1 = px.scatter(
                     df, x="미입력", y="총 점수", 
                     color="지사" if "지사" in df.columns else None,
-                    color_discrete_map=branch_color_map,  # 고정 색상
-                    category_orders=branch_order,          # 범례 정렬 순서 고정
+                    color_discrete_map=branch_color_map,
+                    category_orders=branch_order,
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
                     size="총접수건" if "총접수건" in df.columns else None,
                     title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)"
                 )
                 st.plotly_chart(fig1, use_container_width=True)
 
-        # ------------------ 2. 표 출력을 위한 데이터 % 포맷팅 ------------------
+        # ------------------ 2. 표 출력을 위한 데이터 서식 적용 (소수점 2자리, %, 시간) ------------------
         display_df = df.copy()
         
-        # AI열(방문율) 및 백분율 컬럼 % 변환 처리
-        percent_cols = ['방문율', '입력율(%)', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
+        # 1) % 변환 처리 (F열 입력율(%), AC열 관련 항목 포함)
+        percent_cols = ['입력율(%)', '방문율', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
+        # 28번째 열(AC열, 0부터 시작하므로 28번)의 컬럼명 확인 및 % 적용 목록 추가
+        if len(display_df.columns) > 28:
+            ac_col_name = display_df.columns[28]
+            if ac_col_name not in percent_cols:
+                percent_cols.append(ac_col_name)
+
         for p_col in percent_cols:
             if p_col in display_df.columns:
                 display_df[p_col] = display_df[p_col].apply(
-                    lambda x: f"{x*100:.1f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.1f}%" if pd.notnull(x) else "")
+                    lambda x: f"{x*100:.2f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.2f}%" if pd.notnull(x) else "")
                 )
+
+        # 2) 시간 데이터 처리 (시:분만 표현)
+        for col in display_df.columns:
+            if pd.api.types.is_datetime64_any_dtype(display_df[col]) or '시간' in col or '시각' in col:
+                try:
+                    display_df[col] = pd.to_datetime(display_df[col], errors='ignore')
+                    display_df[col] = display_df[col].apply(
+                        lambda x: x.strftime('%H:%M') if pd.notnull(x) and hasattr(x, 'strftime') else x
+                    )
+                except Exception:
+                    pass
+
+        # 3) 기타 일반 수치 데이터 소수점 2자리 포맷팅
+        for col in display_df.select_dtypes(include=['float', 'float64']).columns:
+            if col not in percent_cols:
+                display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
         # ------------------ 3. 집중 관리 대상 모니터링 (상위 10개) ------------------
         st.markdown("---")
