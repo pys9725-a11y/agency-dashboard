@@ -9,27 +9,27 @@ st.markdown("""
     <style>
         /* 전체 기본 폰트 크기 확대 */
         html, body, [class*="css"] {
-            font-size: 25px !important;
+            font-size: 23px !important;
         }
         
         /* 제목 및 주요 헤더 폰트 크기 확대 */
-        h1 { font-size: 2.8rem !important; }
-        h2 { font-size: 2.3rem !important; }
-        h3 { font-size: 2.0rem !important; }
+        h1 { font-size: 2.6rem !important; }
+        h2 { font-size: 2.1rem !important; }
+        h3 { font-size: 1.8rem !important; }
         
         /* 표(Dataframe) 내부 글자 크기 확대 */
         .stDataFrame {
-            font-size: 21px !important;
+            font-size: 19px !important;
         }
         
         /* 드롭다운/선택 상자 폰트 확대 */
         div[data-baseweb="select"] {
-            font-size: 23px !important;
+            font-size: 19px !important;
         }
 
         /* 입력 폼 / 업로더 글자 확대 */
         .stFileUploader label {
-            font-size: 23px !important;
+            font-size: 21px !important;
         }
     </style>
 """, unsafe_allow_html=True)
