@@ -82,13 +82,24 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
-        # AA4 '점수(점)' 항목을 화면 표시용 '점수'로 이름 변경
-        if '점수(점)' in df.columns:
-            df = df.rename(columns={'점수(점)': '점수'})
-        
+        # 엑셀 열 인덱스 기준 매핑 (동일 이름인 '점수(점)'이 여러 개 위치하므로 위치 인덱스 처리)
+        # AA4 (27번째 열 - index 26): 불만 점수
+        # P4  (16번째 열 - index 15): 예약 점수
+        # U4  (21번째 열 - index 20): 처리시간 점수
+        if len(df.columns) > 26 and df.columns[26] == '점수(점)':
+            df.rename(columns={df.columns[26]: '불만 점수'}, inplace=True)
+        elif '점수(점)' in df.columns:
+            df.rename(columns={'점수(점)': '불만 점수'}, inplace=True)
+
+        if len(df.columns) > 15 and df.columns[15] == '점수(점)':
+            df.rename(columns={df.columns[15]: '예약 점수'}, inplace=True)
+
+        if len(df.columns) > 20 and df.columns[20] == '점수(점)':
+            df.rename(columns={df.columns[20]: '처리시간 점수'}, inplace=True)
+
         # 주요 수치 데이터 숫자로 강제 변환
-        numeric_cols = ['총 점수', '점수', '총접수건', '총접수', '미방문', '미입력', '방문', '입력건', 
-                        '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
+        numeric_cols = ['총 점수', '불만 점수', '예약 점수', '처리시간 점수', '총접수건', '총접수', '미방문', '미입력', 
+                        '방문', '입력건', '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
                         '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
         for col in numeric_cols:
             if col in df.columns:
@@ -104,10 +115,10 @@ if uploaded_file:
             branch_color_map = None
             branch_order = None
 
-        # ------------------ 1. 사장님 보고용 시각화 ------------------
+        # ------------------ 1. 보고용 주요 시각화 ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수 (D4: 총 점수)
+        # [왼쪽] 지사별 평균 서비스 점수 (총 점수)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
             if '지사' in df.columns and '총 점수' in df.columns:
@@ -129,7 +140,6 @@ if uploaded_file:
         # [오른쪽] 총 점수 vs 총접수건 (G4)
         with right_col:
             st.subheader("💡 총 점수 vs 총접수건")
-            # 엑셀 G4 열 이름 호환성 처리 (총접수건 또는 총접수)
             total_cnt_col = '총접수건' if '총접수건' in df.columns else ('총접수' if '총접수' in df.columns else None)
             
             if total_cnt_col and '총 점수' in df.columns:
@@ -148,12 +158,13 @@ if uploaded_file:
         # ------------------ 2. 표 출력을 위한 데이터 서식 적용 ------------------
         display_df = df.copy()
         
-        # 1) S열(19번째 열, index=18) 'X시간 Y분' 포맷 적용
+        # S열(19번째 열, index=18) 평균시간/단위환산 'X시간 Y분' 포맷 적용
+        s_col_name = None
         if len(display_df.columns) > 18:
             s_col_name = display_df.columns[18]
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
 
-        # 2) % 변환 처리
+        # % 변환 처리
         percent_cols = ['입력율(%)', '방문율', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
 
         for p_col in percent_cols:
@@ -162,55 +173,103 @@ if uploaded_file:
                     lambda x: f"{x*100:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) and x <= 1.0 else (f"{x:.2f}%" if pd.notnull(x) and isinstance(x, (int, float)) else "")
                 )
 
-        # 3) 기타 일반 수치 데이터 소수점 2자리 포맷팅
+        # 기타 일반 수치 데이터 소수점 2자리 포맷팅
         for col in display_df.select_dtypes(include=['float', 'float64']).columns:
             if col not in percent_cols:
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
         # ------------------ 3. 집중 관리 대상 모니터링 (상위 10개) ------------------
         st.markdown("---")
+        
+        # [행 1] 기존 표 2개: 미입력 건수 & 서비스 불만율
         col_a, col_b = st.columns(2)
         
         with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '점수', '총 점수'] if c in display_df.columns]
+                unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[unentered_cols].head(10)
+                # 표 제목 중 '불만 점수' -> '점수' 변경
+                top_unentered = top_unentered.rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
+                dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
                 top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[dissatisfied_cols].head(10)
+                top_dissatisfied = top_dissatisfied.rename(columns={'불만 점수': '점수'})
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
+
+        # [행 2] 신규 표 2개: 1시간 이내 예약율 & 평균처리시간
+        col_c, col_d = st.columns(2)
+
+        with col_c:
+            st.subheader("📅 1시간 이내 예약율 상위 대리점 (TOP 10)")
+            if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
+                reservation_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
+                top_reservation = display_df.sort_values(by='예약율(%)', ascending=False)[reservation_cols].head(10)
+                top_reservation = top_reservation.rename(columns={'예약 점수': '점수'})
+                st.dataframe(top_reservation, use_container_width=True, hide_index=True, height=430)
+
+        with col_d:
+            st.subheader("⏱️ 평균처리시간 상위 대리점 (TOP 10)")
+            if '방문 대리점' in df.columns and s_col_name:
+                time_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
+                # 원본 numeric 데이터를 활용하여 정렬
+                sorted_idx = df.sort_values(by=s_col_name, ascending=False).index
+                top_time = display_df.loc[sorted_idx, time_cols].head(10)
+                top_time = top_time.rename(columns={'처리시간 점수': '점수'})
+                st.dataframe(top_time, use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 4. 지사별 대리점 상세 조회 ------------------
         st.markdown("---")
         st.subheader("🏢 지사별 대리점 상세 현황 조회")
         
-        col_select_a, col_select_b = st.columns(2)
         branch_list = ["전체"] + list(df['지사'].dropna().unique()) if '지사' in df.columns else ["전체"]
 
-        # [왼쪽] 선택 지사의 미입력 대리점 전체 목록
+        # [상세 조회 행 1] 미입력 & 서비스 불만율
+        col_select_a, col_select_b = st.columns(2)
+
         with col_select_a:
             selected_branch_unentered = st.selectbox("미입력 대리점 조회 (지사 선택)", branch_list, key="select_unentered")
             filtered_unentered = display_df if selected_branch_unentered == "전체" else display_df[display_df['지사'] == selected_branch_unentered]
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '점수', '총 점수'] if c in display_df.columns]
-                unentered_result = filtered_unentered.sort_values(by='미입력', ascending=False)[target_cols]
-                st.dataframe(unentered_result, use_container_width=True, hide_index=True, height=430)
+                target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
+                res = filtered_unentered.sort_values(by='미입력', ascending=False)[target_cols].rename(columns={'불만 점수': '점수'})
+                st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
-        # [오른쪽] 선택 지사의 서비스 불만율 대리점 전체 목록
         with col_select_b:
             selected_branch_dissatisfied = st.selectbox("서비스 불만율 대리점 조회 (지사 선택)", branch_list, key="select_dissatisfied")
             filtered_dissatisfied = display_df if selected_branch_dissatisfied == "전체" else display_df[display_df['지사'] == selected_branch_dissatisfied]
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
-                dissatisfied_result = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols]
-                st.dataframe(dissatisfied_result, use_container_width=True, hide_index=True, height=430)
+                target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
+                res = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols].rename(columns={'불만 점수': '점수'})
+                st.dataframe(res, use_container_width=True, hide_index=True, height=430)
+
+        # [상세 조회 행 2] 1시간 이내 예약율 & 평균처리시간
+        col_select_c, col_select_d = st.columns(2)
+
+        with col_select_c:
+            selected_branch_res = st.selectbox("1시간 이내 예약율 대리점 조회 (지사 선택)", branch_list, key="select_res")
+            filtered_res = display_df if selected_branch_res == "전체" else display_df[display_df['지사'] == selected_branch_res]
+            
+            if '방문 대리점' in df.columns and '예약율(%)' in df.columns:
+                target_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
+                res = filtered_res.sort_values(by='예약율(%)', ascending=False)[target_cols].rename(columns={'예약 점수': '점수'})
+                st.dataframe(res, use_container_width=True, hide_index=True, height=430)
+
+        with col_select_d:
+            selected_branch_time = st.selectbox("평균처리시간 대리점 조회 (지사 선택)", branch_list, key="select_time")
+            filtered_time = display_df if selected_branch_time == "전체" else display_df[display_df['지사'] == selected_branch_time]
+            
+            if '방문 대리점' in df.columns and s_col_name:
+                target_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
+                sort_idx = df.loc[filtered_time.index].sort_values(by=s_col_name, ascending=False).index
+                res = filtered_time.loc[sort_idx, target_cols].rename(columns={'처리시간 점수': '점수'})
+                st.dataframe(res, use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 5. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
