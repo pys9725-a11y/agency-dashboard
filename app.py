@@ -71,13 +71,9 @@ st.markdown("""
             margin-bottom: 8px;
         }
         div[data-testid="stMetricValue"] {
-            font-size: 32px !important;
+            font-size: 22px !important; /* 긴 텍스트 수용을 위해 글자 크기 조절 */
             font-weight: 800 !important;
             color: #1e293b !important;
-        }
-        div[data-testid="stMetricDelta"] {
-            font-size: 18px !important;
-            font-weight: 600 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -233,6 +229,19 @@ if uploaded_file:
         with filter_col2:
             selected_agency = st.selectbox("🏢 조회할 대리점 선택", filtered_agencies, key="main_agency")
 
+        # ------------------ [신규] 지사별 대리점 개수 표출 배너 ------------------
+        if '지사' in df.columns and '방문 대리점' in df.columns:
+            branch_counts = df.groupby('지사')['방문 대리점'].nunique()
+            counts_text = " &nbsp;|&nbsp; ".join([f"<b>{b}</b>: {c}개소" for b, c in branch_counts.items()])
+            st.markdown(
+                f"""
+                <div style='background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 20px; border-radius: 12px; margin-top: 5px; margin-bottom: 15px; font-size: 20px; color: #334155;'>
+                    🏢 <b>지사별 대리점 현황:</b> {counts_text}
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
+
         st.markdown("---")
 
         # ------------------ 전체 / 지사 대시보드 영역 ------------------
@@ -256,10 +265,18 @@ if uploaded_file:
         else:
             best_branch, best_score, worst_branch, worst_score = "N/A", 0, "N/A", 0
 
+        # 지사 점수 대비 전체 평균과의 차이 계산
+        best_diff = best_score - avg_score
+        worst_diff = worst_score - avg_score
+
+        best_str = f"{best_branch} {best_score:.2f}점 (평균대비 {best_diff:+.2f}점)" if best_score else "N/A"
+        worst_str = f"{worst_branch} {worst_score:.2f}점 (평균대비 {worst_diff:+.2f}점)" if worst_score else "N/A"
+
+        # 카드 하단 delta(초록색 태그) 제거 및 텍스트 통합 표시
         kpi1.metric("총 대리점 수", f"{total_agencies:,} 개소")
         kpi2.metric("전체 평균 점수", f"{avg_score:.2f} 점" if pd.notnull(avg_score) else "N/A")
-        kpi3.metric("최고 점수 지사", f"{best_branch}", f"{best_score:.2f}점" if best_score else "")
-        kpi4.metric("최저 점수 지사", f"{worst_branch}", f"{worst_score:.2f}점" if worst_score else "")
+        kpi3.metric("최고 점수 지사", best_str)
+        kpi4.metric("최저 점수 지사", worst_str)
 
         st.markdown("---")
 
@@ -406,7 +423,7 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # 2. 7개 평가 지표 현황 카드 (조치입력 점수 제외 & 만점/평균대비 적용)
+                # 2. 7개 평가 지표 현황 카드
                 st.markdown("### 📋 7개 평가 지표별 세부 성과 현황")
                 
                 metrics_config = [
@@ -419,7 +436,6 @@ if uploaded_file:
                     ("7. 고객만족도", "고객만족도 점수", 5)
                 ]
 
-                # 1줄: 4개 배치
                 col1, col2, col3, col4 = st.columns(4)
                 cols_row1 = [col1, col2, col3, col4]
 
@@ -427,10 +443,10 @@ if uploaded_file:
                     label, col_name, max_score = metrics_config[idx]
                     score = agency_data.get(col_name, 0)
                     score_val = float(score) if pd.notnull(score) else 0.0
-                    avg_score = df[col_name].mean() if col_name in df.columns else 0.0
-                    diff = score_val - avg_score
+                    avg_score_val = df[col_name].mean() if col_name in df.columns else 0.0
+                    diff = score_val - avg_score_val
 
-                    delta_text = f"{diff:+.2f}점 (평균: {avg_score:.2f}점 / 만점: {max_score}점)"
+                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 / 만점: {max_score}점)"
 
                     with cols_row1[idx]:
                         st.metric(
@@ -439,7 +455,6 @@ if uploaded_file:
                             delta=delta_text
                         )
 
-                # 2줄: 3개 배치 (4컬럼 생성 후 3개 사용)
                 col5, col6, col7, _ = st.columns(4)
                 cols_row2 = [col5, col6, col7]
 
@@ -447,10 +462,10 @@ if uploaded_file:
                     label, col_name, max_score = metrics_config[idx + 4]
                     score = agency_data.get(col_name, 0)
                     score_val = float(score) if pd.notnull(score) else 0.0
-                    avg_score = df[col_name].mean() if col_name in df.columns else 0.0
-                    diff = score_val - avg_score
+                    avg_score_val = df[col_name].mean() if col_name in df.columns else 0.0
+                    diff = score_val - avg_score_val
 
-                    delta_text = f"{diff:+.2f}점 (평균: {avg_score:.2f}점 / 만점: {max_score}점)"
+                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 / 만점: {max_score}점)"
 
                     with cols_row2[idx]:
                         st.metric(
