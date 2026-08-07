@@ -3,6 +3,32 @@ import pandas as pd
 import plotly.express as px
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
+
+# ------------------ 전체 폰트 및 요소 20% 확대 스타일 정의 ------------------
+st.markdown("""
+    <style>
+        /* 전체 기본 폰트 크기 확대 */
+        html, body, [class*="css"]  {
+            font-size: 19px !important;
+        }
+        
+        /* 제목 및 헤더 폰트 크기 확대 */
+        h1 { font-size: 2.3rem !important; }
+        h2 { font-size: 1.8rem !important; }
+        h3 { font-size: 1.5rem !important; }
+        
+        /* 데이터프레임 표 내부 폰트 크기 및 높이 확대 */
+        .stDataFrame {
+            font-size: 16px !important;
+        }
+        
+        /* 선택 상자 및 드롭다운 폰트 확대 */
+        div[data-baseweb="select"] {
+            font-size: 18px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("📊 대리점 서비스 평가 및 데이터 입력 현황")
 
 # 엑셀 파일 업로드
@@ -13,7 +39,6 @@ def format_time_duration(val):
     if pd.isna(val) or val == "":
         return ""
     try:
-        # datetime.time 객체 또는 string, timedelta 형태 대응
         if isinstance(val, str):
             parts = val.split(":")
             if len(parts) >= 2:
@@ -29,12 +54,10 @@ def format_time_duration(val):
             hours = total_seconds // 3600
             minutes = (total_seconds % 3600) // 60
         else:
-            # datetime 객체인 경우
             dt = pd.to_datetime(val)
             hours = dt.hour
             minutes = dt.minute
 
-        # 문자열 조립
         if hours > 0 and minutes > 0:
             return f"{hours}시간 {minutes}분"
         elif hours > 0 and minutes == 0:
@@ -72,7 +95,7 @@ if uploaded_file:
             branch_color_map = None
             branch_order = None
 
-        # ------------------ 1. 사장님 보고용 시각화 ------------------
+        # ------------------ 1. 사장님 보고용 시각화 (높이 20% 확대: 550px) ------------------
         left_col, right_col = st.columns(2)
         
         # [왼쪽] 지사별 평균 서비스 점수
@@ -87,9 +110,11 @@ if uploaded_file:
                     color="지사",
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
-                    text_auto='.2f',  # 소수점 둘째 자리 표현
-                    title="지사별 서비스 평가 평균 점수"
+                    text_auto='.2f',
+                    title="지사별 서비스 평가 평균 점수",
+                    height=550  # 기존 대비 20% 키움
                 )
+                fig2.update_layout(font=dict(size=15)) # 차트 내부 텍스트 확대
                 st.plotly_chart(fig2, use_container_width=True)
 
         # [오른쪽] 미입력 건수 vs 총 점수
@@ -103,8 +128,10 @@ if uploaded_file:
                     category_orders=branch_order,
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
                     size="총접수건" if "총접수건" in df.columns else None,
-                    title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)"
+                    title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)",
+                    height=550  # 기존 대비 20% 키움
                 )
+                fig1.update_layout(font=dict(size=15)) # 차트 내부 텍스트 확대
                 st.plotly_chart(fig1, use_container_width=True)
 
         # ------------------ 2. 표 출력을 위한 데이터 서식 적용 ------------------
@@ -143,7 +170,7 @@ if uploaded_file:
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[
                     [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
                 ].head(10)
-                st.dataframe(top_unentered, use_container_width=True, hide_index=True)
+                st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=420)
                 
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
@@ -151,7 +178,7 @@ if uploaded_file:
                 top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[
                     [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
                 ].head(10)
-                st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True)
+                st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=420)
 
         # ------------------ 4. 지사별 대리점 상세 조회 ------------------
         st.markdown("---")
@@ -168,7 +195,7 @@ if uploaded_file:
             if '방문 대리점' in df.columns and '미입력' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
                 unentered_result = filtered_unentered.sort_values(by='미입력', ascending=False)[target_cols]
-                st.dataframe(unentered_result, use_container_width=True, hide_index=True)
+                st.dataframe(unentered_result, use_container_width=True, hide_index=True, height=420)
 
         # [오른쪽] 선택 지사의 서비스 불만율 대리점 전체 목록
         with col_select_b:
@@ -178,7 +205,7 @@ if uploaded_file:
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
                 dissatisfied_result = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols]
-                st.dataframe(dissatisfied_result, use_container_width=True, hide_index=True)
+                st.dataframe(dissatisfied_result, use_container_width=True, hide_index=True, height=420)
 
         # ------------------ 5. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
@@ -186,9 +213,9 @@ if uploaded_file:
         if '지사' in display_df.columns:
             selected_branch = st.selectbox("지사를 선택하세요 (전체 조회)", ["전체"] + list(display_df["지사"].dropna().unique()), key="select_all")
             filtered_df = display_df if selected_branch == "전체" else display_df[display_df["지사"] == selected_branch]
-            st.dataframe(filtered_df, use_container_width=True)
+            st.dataframe(filtered_df, use_container_width=True, height=500)
         else:
-            st.dataframe(display_df, use_container_width=True)
+            st.dataframe(display_df, use_container_width=True, height=500)
 
     except ValueError:
         st.error("⚠️ 업로드한 엑셀 파일 안에 '[평가]' 라는 이름의 시트(Sheet)가 존재하지 않습니다.")
