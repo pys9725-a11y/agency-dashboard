@@ -13,9 +13,9 @@ st.markdown("""
         }
         
         /* 제목 및 주요 헤더 폰트 크기 확대 */
-        h1 { font-size: 2.6rem !important; }
-        h2 { font-size: 2.1rem !important; }
-        h3 { font-size: 1.8rem !important; }
+        h1 { font-size: 2.3rem !important; }
+        h2 { font-size: 2.0rem !important; }
+        h3 { font-size: 1.7rem !important; }
         
         /* 표(Dataframe) 내부 글자 크기 확대 */
         .stDataFrame {
