@@ -24,14 +24,16 @@ if uploaded_file:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
 
-        # ------------------ 지사별 색상 1:1 완벽 고정 매핑 ------------------
+        # ------------------ 지사별 색상 및 범례 순서 고정 ------------------
         if '지사' in df.columns:
-            # 지사 목록을 정렬하여 고정된 색상 맵 생성
+            # 지사 목록을 가나다순으로 정렬하여 색상 및 범례 순서 동일 적용
             unique_branches = sorted(df['지사'].dropna().unique())
             palette = px.colors.qualitative.Plotly
             branch_color_map = {branch: palette[i % len(palette)] for i, branch in enumerate(unique_branches)}
+            branch_order = {"지사": unique_branches}
         else:
             branch_color_map = None
+            branch_order = None
 
         # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
@@ -46,7 +48,8 @@ if uploaded_file:
                     x="지사", 
                     y="총 점수", 
                     color="지사",
-                    color_discrete_map=branch_color_map,  # 지사명 기준 고정 색상 매핑
+                    color_discrete_map=branch_color_map,  # 고정 색상
+                    category_orders=branch_order,          # 범례/X축 정렬 순서 고정
                     text_auto='.1f',
                     title="지사별 서비스 평가 평균 점수"
                 )
@@ -59,7 +62,8 @@ if uploaded_file:
                 fig1 = px.scatter(
                     df, x="미입력", y="총 점수", 
                     color="지사" if "지사" in df.columns else None,
-                    color_discrete_map=branch_color_map,  # 지사명 기준 고정 색상 매핑
+                    color_discrete_map=branch_color_map,  # 고정 색상
+                    category_orders=branch_order,          # 범례 정렬 순서 고정
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
                     size="총접수건" if "총접수건" in df.columns else None,
                     title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)"
