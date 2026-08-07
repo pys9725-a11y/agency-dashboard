@@ -50,7 +50,7 @@ st.markdown("""
             font-size: 22px !important;
         }
 
-        /* 7. [신규] KPI 및 메트릭 카드 입체 스타일링 */
+        /* 7. KPI 및 메트릭 카드 입체 스타일링 */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             border: 1px solid #e2e8f0;
@@ -134,13 +134,8 @@ def format_time_duration(val):
     except Exception:
         return str(val)
 
-# [신규] 표 조건부 서식(Highlighting) 적용 함수
+# 표 조건부 서식(Highlighting) 적용 함수
 def apply_highlight_styler(df_sub, target_col, mode='top'):
-    """
-    df_sub: 표 데이터프레임
-    target_col: 색상을 강조할 주요 지표 컬럼명
-    mode: 'top' (상위 우수 - 연한 초록), 'low' (하위 주의 - 연한 빨간/주황)
-    """
     def style_cell(val):
         if mode == 'top':
             return 'background-color: #e6f4ea; color: #137333; font-weight: bold;'
@@ -154,7 +149,6 @@ def apply_highlight_styler(df_sub, target_col, mode='top'):
     return styler
 
 def apply_overall_table_styler(df_input):
-    """ 전체 대리점 표의 '총 점수' 강조 서식 """
     def highlight_total_score(val):
         try:
             num = float(str(val).replace(',', '').replace('%', ''))
@@ -324,25 +318,23 @@ if uploaded_file:
             if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-        # ------------------ 8개 항목 전체 현황 (한 줄에 2개씩 배치 & 조건부 서식) ------------------
+        # ------------------ 7개 평가 지표 세부 현황 (TOP 20 & LOW 20) ------------------
         st.markdown("---")
-        st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
+        st.subheader("📋 7개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
         indicators_info = [
-            ("1. 조치입력 점수", '조치입력 점수', ['지사', '방문 대리점', '총접수건', '조치입력 점수', '총 점수']),
-            ("2. 조치정보입력율", '입력율(%)', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
-            ("3. 약속시간 점수", '예약 점수', ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
-            ("4. 처리시간 점수", '처리시간 점수', ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
-            ("5. 재방문 점수", '재방문 점수', ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
-            ("6. 불만 점수", '불만 점수', ['지사', '방문 대리점', '총접수건', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수']),
-            ("7. 독촉 점수", '독촉 점수', ['지사', '방문 대리점', '총접수건', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수']),
-            ("8. 고객만족도 점수", '고객만족도 점수', ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
+            ("1. 조치정보입력율", '입력율(%)', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
+            ("2. 약속시간입력율", '예약 점수', ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
+            ("3. 평균처리시간", '처리시간 점수', ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
+            ("4. 재방문율", '재방문 점수', ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
+            ("5. 서비스불만율", '불만 점수', ['지사', '방문 대리점', '총접수건', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수']),
+            ("6. 독촉율", '독촉 점수', ['지사', '방문 대리점', '총접수건', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수']),
+            ("7. 고객만족도", '고객만족도 점수', ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
         ]
 
         for i in range(0, len(indicators_info), 2):
             col1, col2 = st.columns(2)
             
-            # 왼쪽 컬럼 (i번째 항목)
             title_name1, col_key1, target_cols1 = indicators_info[i]
             with col1:
                 st.markdown(f"#### 📌 {title_name1}")
@@ -361,7 +353,6 @@ if uploaded_file:
                 else:
                     st.info(f"'{title_name1}' 관련 데이터 항목을 찾을 수 없습니다.")
 
-            # 오른쪽 컬럼 (i+1번째 항목)
             if i + 1 < len(indicators_info):
                 title_name2, col_key2, target_cols2 = indicators_info[i + 1]
                 with col2:
@@ -415,39 +406,58 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # 2. 8개 평가 지표 현황 카드
-                st.markdown("### 📋 8개 평가 지표별 세부 성과 현황")
+                # 2. 7개 평가 지표 현황 카드 (조치입력 점수 제외 & 만점/평균대비 적용)
+                st.markdown("### 📋 7개 평가 지표별 세부 성과 현황")
                 
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("1. 조치입력 점수", f"{agency_data.get('조치입력 점수', 0):.2f} 점")
+                metrics_config = [
+                    ("1. 조치정보입력율", "조치정보입력율 점수", 15),
+                    ("2. 약속시간입력율", "예약 점수", 25),
+                    ("3. 평균처리시간", "처리시간 점수", 15),
+                    ("4. 재방문율", "재방문 점수", 15),
+                    ("5. 서비스불만율", "불만 점수", 15),
+                    ("6. 독촉율", "독촉 점수", 10),
+                    ("7. 고객만족도", "고객만족도 점수", 5)
+                ]
 
-                act_rate = agency_data.get('입력율(%)', 0)
-                act_rate_str = f"{act_rate*100:.1f}%" if pd.notnull(act_rate) and act_rate <= 1.0 else f"{act_rate:.1f}%"
-                unentered_cnt = agency_data.get('미입력', 0)
-                unentered_str = f"{int(unentered_cnt):,}건" if pd.notnull(unentered_cnt) else "0건"
-                m2.metric("2. 조치정보입력율", f"{agency_data.get('조치정보입력율 점수', 0):.2f} 점", f"입력율: {act_rate_str} (미입력: {unentered_str})")
+                # 1줄: 4개 배치
+                col1, col2, col3, col4 = st.columns(4)
+                cols_row1 = [col1, col2, col3, col4]
 
-                res_rate = agency_data.get('예약율(%)', 0)
-                res_rate_str = f"{res_rate*100:.1f}%" if pd.notnull(res_rate) and res_rate <= 1.0 else f"{res_rate:.1f}%"
-                m3.metric("3. 약속시간 점수", f"{agency_data.get('예약 점수', 0):.2f} 점", f"예약율: {res_rate_str}")
+                for idx in range(4):
+                    label, col_name, max_score = metrics_config[idx]
+                    score = agency_data.get(col_name, 0)
+                    score_val = float(score) if pd.notnull(score) else 0.0
+                    avg_score = df[col_name].mean() if col_name in df.columns else 0.0
+                    diff = score_val - avg_score
 
-                avg_t = agency_data.get(s_col_name, "") if s_col_name else ""
-                m4.metric("4. 처리시간 점수", f"{agency_data.get('처리시간 점수', 0):.2f} 점", f"평균: {format_time_duration(avg_t)}")
+                    delta_text = f"{diff:+.2f}점 (평균: {avg_score:.2f}점 / 만점: {max_score}점)"
 
-                m5, m6, m7, m8 = st.columns(4)
-                re_rate = agency_data.get('재방문율(%)', 0)
-                re_rate_str = f"{re_rate*100:.1f}%" if pd.notnull(re_rate) and re_rate <= 1.0 else f"{re_rate:.1f}%"
-                m5.metric("5. 재방문 점수", f"{agency_data.get('재방문 점수', 0):.2f} 점", f"재방문율: {re_rate_str}")
+                    with cols_row1[idx]:
+                        st.metric(
+                            label=f"{label} (만점 {max_score}점)",
+                            value=f"{score_val:.2f} 점",
+                            delta=delta_text
+                        )
 
-                dis_rate = agency_data.get('서비스불만율(%)', 0)
-                dis_rate_str = f"{dis_rate*100:.1f}%" if pd.notnull(dis_rate) and dis_rate <= 1.0 else f"{dis_rate:.1f}%"
-                m6.metric("6. 불만 점수", f"{agency_data.get('불만 점수', 0):.2f} 점", f"불만율: {dis_rate_str}")
+                # 2줄: 3개 배치 (4컬럼 생성 후 3개 사용)
+                col5, col6, col7, _ = st.columns(4)
+                cols_row2 = [col5, col6, col7]
 
-                urg_rate = agency_data.get('독촉율(%)', 0)
-                urg_rate_str = f"{urg_rate*100:.1f}%" if pd.notnull(urg_rate) and urg_rate <= 1.0 else f"{urg_rate:.1f}%"
-                m7.metric("7. 독촉 점수", f"{agency_data.get('독촉 점수', 0):.2f} 점", f"독촉율: {urg_rate_str}")
+                for idx in range(3):
+                    label, col_name, max_score = metrics_config[idx + 4]
+                    score = agency_data.get(col_name, 0)
+                    score_val = float(score) if pd.notnull(score) else 0.0
+                    avg_score = df[col_name].mean() if col_name in df.columns else 0.0
+                    diff = score_val - avg_score
 
-                m8.metric("8. 고객만족도 점수", f"{agency_data.get('고객만족도 점수', 0):.2f} 점")
+                    delta_text = f"{diff:+.2f}점 (평균: {avg_score:.2f}점 / 만점: {max_score}점)"
+
+                    with cols_row2[idx]:
+                        st.metric(
+                            label=f"{label} (만점 {max_score}점)",
+                            value=f"{score_val:.2f} 점",
+                            delta=delta_text
+                        )
 
                 st.markdown("---")
 
@@ -455,13 +465,13 @@ if uploaded_file:
                 st.markdown("### 📊 평균 대비 세부 항목 점수 비교")
                 
                 score_cols = [
-                    '조치입력 점수', '조치정보입력율 점수', '예약 점수', 
+                    '조치정보입력율 점수', '예약 점수', 
                     '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
                 ]
                 
                 col_display_names = [
-                    '조치입력 점수', '조치정보입력율', '예약 점수', 
-                    '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
+                    '조치정보입력율', '약속시간입력율', 
+                    '평균처리시간', '재방문율', '서비스불만율', '독촉율', '고객만족도'
                 ]
 
                 available_indices = [i for i, c in enumerate(score_cols) if c in df.columns]
@@ -551,7 +561,6 @@ if uploaded_file:
         st.subheader("🔍 대리점별 전체 항목 조회")
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
         
-        # 전체 표 '총 점수' 컬럼 서식 적용 (90점 이상: 초록, 70점 미만: 빨간색)
         styled_overall_df = apply_overall_table_styler(clean_display_df)
         st.dataframe(styled_overall_df, use_container_width=True, height=520)
 
