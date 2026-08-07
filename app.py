@@ -46,11 +46,11 @@ st.markdown("""
 
         /* 6. 탭(Tab) 버튼 폰트 및 여백 */
         button[data-baseweb="tab"] {
-            font-size: 27px !important;
-            padding: 12px 24px !important;
+            font-size: 24px !important;
+            padding: 10px 20px !important;
         }
         button[data-baseweb="tab"] div {
-            font-size: 27px !important;
+            font-size: 24px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -130,8 +130,12 @@ if uploaded_file:
         if len(cols) > 32: cols[32] = '고객만족도 점수'
         df.columns = cols
 
+        # 조치정보입력율 점수 칼럼 생성 (1번과 매핑)
+        if '조치입력 점수' in df.columns:
+            df['조치정보입력율 점수'] = df['조치입력 점수']
+
         numeric_cols = [
-            '총 점수', '불만 점수', '예약 점수', '처리시간 점수', '조치입력 점수', '재방문 점수', '독촉 점수', '고객만족도 점수',
+            '총 점수', '불만 점수', '예약 점수', '처리시간 점수', '조치입력 점수', '조치정보입력율 점수', '재방문 점수', '독촉 점수', '고객만족도 점수',
             '총접수건', '총접수', '미방문', '미입력', '방문 입력건', '입력건', '입력율(%)', 
             '1시간이내예약건', '예약율(%)', '재방문건수', '재방문율(%)', '불만건수', '서비스불만율(%)', 
             '독촉건수', '독촉율(%)', '합계', '총건'
@@ -152,7 +156,7 @@ if uploaded_file:
             branch_order = {"지사": unique_branches}
         else:
             unique_branches = []
-            branch_color_map = None
+            branch_color_map = {}
             branch_order = None
 
         # ------------------ 사이드바 메뉴 및 동적 연동 필터 ------------------
@@ -256,33 +260,42 @@ if uploaded_file:
                 if col not in percent_cols and col != '_s_seconds':
                     display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
+            # ------------------ 8개 항목 전체 현황 (8개 탭 구현) ------------------
             st.markdown("---")
-            col_1a, col_1b = st.columns(2)
-            with col_1a:
-                st.subheader("📋 조치정보입력율 현황")
-                tab_act_top, tab_act_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-                if '방문 대리점' in filtered_main_df.columns and '조치입력 점수' in filtered_main_df.columns:
-                    act_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미방문', '미입력', '방문 입력건', '입력율(%)', '조치입력 점수', '총 점수'] if c in display_df.columns]
-                    valid_act_df = filtered_main_df.dropna(subset=['조치입력 점수'])
-                    with tab_act_top:
-                        idx = valid_act_df.sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
-                        st.dataframe(display_df.loc[idx, act_cols].head(20).rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
-                    with tab_act_low:
-                        idx = valid_act_df.sort_values(by=['조치입력 점수', '총 점수'], ascending=[True, False]).index
-                        st.dataframe(display_df.loc[idx, act_cols].head(20).rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
+            st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
+            
+            tabs = st.tabs([
+                "1. 조치입력 점수", "2. 조치정보입력율", "3. 약속시간 점수", "4. 처리시간 점수",
+                "5. 재방문 점수", "6. 불만 점수", "7. 독촉 점수", "8. 고객만족도 점수"
+            ])
 
-            with col_1b:
-                st.subheader("📉 미입력 건수 현황")
-                tab_unentered_top, tab_unentered_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-                if '방문 대리점' in filtered_main_df.columns and '불만 점수' in filtered_main_df.columns:
-                    unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
-                    valid_unentered_df = filtered_main_df.dropna(subset=['불만 점수'])
-                    with tab_unentered_top:
-                        idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
-                        st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
-                    with tab_unentered_low:
-                        idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[True, False]).index
-                        st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
+            indicators_info = [
+                ("조치입력 점수", ['지사', '방문 대리점', '총접수건', '조치입력 점수', '총 점수']),
+                ("입력율(%)", ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
+                ("예약 점수", ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
+                ("처리시간 점수", ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
+                ("재방문 점수", ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
+                ("불만 점수", ['지사', '방문 대리점', '총접수건', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수']),
+                ("독촉 점수", ['지사', '방문 대리점', '총접수건', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수']),
+                ("고객만족도 점수", ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
+            ]
+
+            for i, (col_key, target_cols) in enumerate(indicators_info):
+                with tabs[i]:
+                    sub_cols = [c for c in target_cols if c in display_df.columns]
+                    if col_key in filtered_main_df.columns:
+                        sort_col = col_key
+                        valid_sub_df = filtered_main_df.dropna(subset=[sort_col])
+                        
+                        top_tab, low_tab = st.tabs(["🔝 TOP 20 (상위)", "🔻 LOW 20 (하위)"])
+                        with top_tab:
+                            idx_top = valid_sub_df.sort_values(by=[sort_col, '총 점수'], ascending=[False, False]).index
+                            st.dataframe(display_df.loc[idx_top, sub_cols].head(20), use_container_width=True, hide_index=True, height=400)
+                        with low_tab:
+                            idx_low = valid_sub_df.sort_values(by=[sort_col, '총 점수'], ascending=[True, False]).index
+                            st.dataframe(display_df.loc[idx_low, sub_cols].head(20), use_container_width=True, hide_index=True, height=400)
+                    else:
+                        st.info(f"'{col_key}' 관련 데이터 항목을 찾을 수 없습니다.")
 
             st.markdown("---")
             st.subheader("🔍 대리점별 전체 항목 조회")
@@ -304,7 +317,6 @@ if uploaded_file:
                     
                     st.markdown(f"## 🏢 [{agency_branch}] **{selected_agency}** 평가 상세 리포트")
                     
-                    # 순위 계산
                     total_agencies_count = len(df)
                     overall_rank = df['총 점수'].rank(ascending=False, method='min')[agency_row.index[0]] if '총 점수' in df.columns else None
                     
@@ -323,71 +335,76 @@ if uploaded_file:
 
                     st.markdown("---")
 
-                    # 2. 항목별 세부 성과 현황 (8개 평가 지표 카드)
+                    # 2. 8개 평가 지표 현황 카드 (1~8번 완벽 일치)
                     st.markdown("### 📋 8개 평가 지표별 세부 성과 현황")
                     
                     m1, m2, m3, m4 = st.columns(4)
-                    
-                    # 1. 조치입력 점수
                     m1.metric("1. 조치입력 점수", f"{agency_data.get('조치입력 점수', 0):.2f} 점")
 
-                    # 2. 조치정보입력율 점수 (점수로 메인 표기 변경)
                     act_rate = agency_data.get('입력율(%)', 0)
                     act_rate_str = f"{act_rate*100:.1f}%" if pd.notnull(act_rate) and act_rate <= 1.0 else f"{act_rate:.1f}%"
                     unentered_cnt = agency_data.get('미입력', 0)
                     unentered_str = f"{int(unentered_cnt):,}건" if pd.notnull(unentered_cnt) else "0건"
-                    m2.metric("2. 조치정보입력율", f"{agency_data.get('조치입력 점수', 0):.2f} 점", f"입력율: {act_rate_str} (미입력: {unentered_str})")
+                    m2.metric("2. 조치정보입력율", f"{agency_data.get('조치정보입력율 점수', 0):.2f} 점", f"입력율: {act_rate_str} (미입력: {unentered_str})")
 
-                    # 3. 약속시간 (예약)
                     res_rate = agency_data.get('예약율(%)', 0)
                     res_rate_str = f"{res_rate*100:.1f}%" if pd.notnull(res_rate) and res_rate <= 1.0 else f"{res_rate:.1f}%"
                     m3.metric("3. 약속시간 점수", f"{agency_data.get('예약 점수', 0):.2f} 점", f"예약율: {res_rate_str}")
 
-                    # 4. 평균처리시간
                     avg_t = agency_data.get(s_col_name, "") if s_col_name else ""
                     m4.metric("4. 처리시간 점수", f"{agency_data.get('처리시간 점수', 0):.2f} 점", f"평균: {format_time_duration(avg_t)}")
 
                     m5, m6, m7, m8 = st.columns(4)
-                    
-                    # 5. 재방문율
                     re_rate = agency_data.get('재방문율(%)', 0)
                     re_rate_str = f"{re_rate*100:.1f}%" if pd.notnull(re_rate) and re_rate <= 1.0 else f"{re_rate:.1f}%"
                     m5.metric("5. 재방문 점수", f"{agency_data.get('재방문 점수', 0):.2f} 점", f"재방문율: {re_rate_str}")
 
-                    # 6. 서비스 불만율
                     dis_rate = agency_data.get('서비스불만율(%)', 0)
                     dis_rate_str = f"{dis_rate*100:.1f}%" if pd.notnull(dis_rate) and dis_rate <= 1.0 else f"{dis_rate:.1f}%"
                     m6.metric("6. 불만 점수", f"{agency_data.get('불만 점수', 0):.2f} 점", f"불만율: {dis_rate_str}")
 
-                    # 7. 독촉율
                     urg_rate = agency_data.get('독촉율(%)', 0)
                     urg_rate_str = f"{urg_rate*100:.1f}%" if pd.notnull(urg_rate) and urg_rate <= 1.0 else f"{urg_rate:.1f}%"
                     m7.metric("7. 독촉 점수", f"{agency_data.get('독촉 점수', 0):.2f} 점", f"독촉율: {urg_rate_str}")
 
-                    # 8. 고객만족도
                     m8.metric("8. 고객만족도 점수", f"{agency_data.get('고객만족도 점수', 0):.2f} 점")
 
                     st.markdown("---")
 
-                    # 3. 평균 비교 차트
+                    # 3. 평균 대비 세부 항목 점수 비교 차트 (8개 항목 정확히 연동)
                     st.markdown("### 📊 평균 대비 세부 항목 점수 비교")
                     
-                    score_cols = ['조치입력 점수', '예약 점수', '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수']
-                    available_score_cols = [c for c in score_cols if c in df.columns]
+                    score_cols = [
+                        '조치입력 점수', '조치정보입력율 점수', '예약 점수', 
+                        '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
+                    ]
+                    
+                    # 그래프 X축 라벨용 명칭 매핑
+                    col_display_names = [
+                        '조치입력 점수', '조치정보입력율', '예약 점수', 
+                        '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
+                    ]
 
-                    if available_score_cols:
-                        agency_scores = [agency_data.get(c, 0) for c in available_score_cols]
-                        branch_avg_scores = [branch_agencies[c].mean() for c in available_score_cols]
-                        total_avg_scores = [df[c].mean() for c in available_score_cols]
+                    available_indices = [i for i, c in enumerate(score_cols) if c in df.columns]
+                    x_labels = [col_display_names[i] for i in available_indices]
+                    actual_cols = [score_cols[i] for i in available_indices]
+
+                    if actual_cols:
+                        agency_scores = [agency_data.get(c, 0) for c in actual_cols]
+                        branch_avg_scores = [branch_agencies[c].mean() for c in actual_cols]
+                        total_avg_scores = [df[c].mean() for c in actual_cols]
 
                         all_vals = total_avg_scores + branch_avg_scores + agency_scores
                         max_y = (max(all_vals) * 1.18) if all_vals else 25
 
+                        # 해당 지사 색상 동기화 (지사별 차트의 색상 팔레트 사용)
+                        branch_color = branch_color_map.get(agency_branch, '#F59E0B')
+
                         fig_comp = go.Figure()
 
-                        # 1. 전체 평균 (Base Line)
+                        # 1. 전체 평균 (Slate Gray)
                         fig_comp.add_trace(go.Bar(
-                            x=available_score_cols,
+                            x=x_labels,
                             y=total_avg_scores,
                             name="전체 평균",
                             marker_color='#94A3B8',
@@ -396,20 +413,20 @@ if uploaded_file:
                             textfont=dict(size=15, weight='bold')
                         ))
 
-                        # 2. 해당 지사 평균
+                        # 2. 해당 지사 평균 (지사별 독자 색상 동기화)
                         fig_comp.add_trace(go.Bar(
-                            x=available_score_cols,
+                            x=x_labels,
                             y=branch_avg_scores,
                             name=f"{agency_branch} 평균",
-                            marker_color='#F59E0B',
+                            marker_color=branch_color,
                             text=[f"{v:.2f}" for v in branch_avg_scores],
                             textposition='outside',
                             textfont=dict(size=15, weight='bold')
                         ))
 
-                        # 3. 해당 대리점 (Hero Target)
+                        # 3. 해당 대리점 (Royal Blue)
                         fig_comp.add_trace(go.Bar(
-                            x=available_score_cols,
+                            x=x_labels,
                             y=agency_scores,
                             name=f"{selected_agency}",
                             marker_color='#2563EB',
@@ -420,8 +437,8 @@ if uploaded_file:
 
                         fig_comp.update_layout(
                             barmode='group',
-                            bargap=0.22,
-                            bargroupgap=0.08,
+                            bargap=0.20,
+                            bargroupgap=0.06,
                             title=dict(
                                 text=f"<b>[{selected_agency}] 주요 항목별 점수 비교</b>",
                                 font=dict(size=24, color='#1E293B')
@@ -432,7 +449,7 @@ if uploaded_file:
                             paper_bgcolor='white',
                             font=dict(size=18, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
                             xaxis=dict(
-                                tickfont=dict(size=17, color='#334155'),
+                                tickfont=dict(size=16, color='#334155'),
                                 showgrid=False
                             ),
                             yaxis=dict(
