@@ -43,11 +43,11 @@ st.markdown("""
 
         /* 6. 탭(Tab) 버튼 폰트 및 여백 */
         button[data-baseweb="tab"] {
-            font-size: 24px !important;
-            padding: 10px 20px !important;
+            font-size: 22px !important;
+            padding: 8px 16px !important;
         }
         button[data-baseweb="tab"] div {
-            font-size: 24px !important;
+            font-size: 22px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -257,7 +257,7 @@ if uploaded_file:
             if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-        # ------------------ 8개 항목 전체 현황 (풀어서 펼친 형태) ------------------
+        # ------------------ 8개 항목 전체 현황 (한 줄에 2개씩 배치) ------------------
         st.markdown("---")
         st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
@@ -272,22 +272,45 @@ if uploaded_file:
             ("8. 고객만족도 점수", '고객만족도 점수', ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
         ]
 
-        for title_name, col_key, target_cols in indicators_info:
-            st.markdown(f"#### 📌 {title_name}")
-            sub_cols = [c for c in target_cols if c in display_df.columns]
+        # 2개씩 쌍을 이루어 한 라인(2컬럼)에 배치
+        for i in range(0, len(indicators_info), 2):
+            col1, col2 = st.columns(2)
             
-            if col_key in filtered_main_df.columns:
-                valid_sub_df = filtered_main_df.dropna(subset=[col_key])
-                
-                top_tab, low_tab = st.tabs(["🔝 TOP 20 (상위)", "🔻 LOW 20 (하위)"])
-                with top_tab:
-                    idx_top = valid_sub_df.sort_values(by=[col_key, '총 점수'], ascending=[False, False]).index
-                    st.dataframe(display_df.loc[idx_top, sub_cols].head(20), use_container_width=True, hide_index=True, height=350)
-                with low_tab:
-                    idx_low = valid_sub_df.sort_values(by=[col_key, '총 점수'], ascending=[True, False]).index
-                    st.dataframe(display_df.loc[idx_low, sub_cols].head(20), use_container_width=True, hide_index=True, height=350)
-            else:
-                st.info(f"'{title_name}' 관련 데이터 항목을 찾을 수 없습니다.")
+            # 왼쪽 컬럼 (i번째 항목)
+            title_name1, col_key1, target_cols1 = indicators_info[i]
+            with col1:
+                st.markdown(f"#### 📌 {title_name1}")
+                sub_cols1 = [c for c in target_cols1 if c in display_df.columns]
+                if col_key1 in filtered_main_df.columns:
+                    valid_sub_df1 = filtered_main_df.dropna(subset=[col_key1])
+                    top_tab1, low_tab1 = st.tabs(["🔝 TOP 20", "🔻 LOW 20"])
+                    with top_tab1:
+                        idx_top1 = valid_sub_df1.sort_values(by=[col_key1, '총 점수'], ascending=[False, False]).index
+                        st.dataframe(display_df.loc[idx_top1, sub_cols1].head(20), use_container_width=True, hide_index=True, height=360)
+                    with low_tab1:
+                        idx_low1 = valid_sub_df1.sort_values(by=[col_key1, '총 점수'], ascending=[True, False]).index
+                        st.dataframe(display_df.loc[idx_low1, sub_cols1].head(20), use_container_width=True, hide_index=True, height=360)
+                else:
+                    st.info(f"'{title_name1}' 관련 데이터 항목을 찾을 수 없습니다.")
+
+            # 오른쪽 컬럼 (i+1번째 항목)
+            if i + 1 < len(indicators_info):
+                title_name2, col_key2, target_cols2 = indicators_info[i + 1]
+                with col2:
+                    st.markdown(f"#### 📌 {title_name2}")
+                    sub_cols2 = [c for c in target_cols2 if c in display_df.columns]
+                    if col_key2 in filtered_main_df.columns:
+                        valid_sub_df2 = filtered_main_df.dropna(subset=[col_key2])
+                        top_tab2, low_tab2 = st.tabs(["🔝 TOP 20", "🔻 LOW 20"])
+                        with top_tab2:
+                            idx_top2 = valid_sub_df2.sort_values(by=[col_key2, '총 점수'], ascending=[False, False]).index
+                            st.dataframe(display_df.loc[idx_top2, sub_cols2].head(20), use_container_width=True, hide_index=True, height=360)
+                        with low_tab2:
+                            idx_low2 = valid_sub_df2.sort_values(by=[col_key2, '총 점수'], ascending=[True, False]).index
+                            st.dataframe(display_df.loc[idx_low2, sub_cols2].head(20), use_container_width=True, hide_index=True, height=360)
+                    else:
+                        st.info(f"'{title_name2}' 관련 데이터 항목을 찾을 수 없습니다.")
+
             st.markdown("---")
 
         # ------------------ 대리점별 상세 리포트 영역 ------------------
