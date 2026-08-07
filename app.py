@@ -86,7 +86,7 @@ if uploaded_file:
         if '점수(점)' in df.columns:
             df = df.rename(columns={'점수(점)': '점수'})
         
-        # 주요 수치 데이터 숫자로 강제 변환 (Y4: 불만건수, Z4: 서비스불만율(%), AA4: 점수 포함)
+        # 주요 수치 데이터 숫자로 강제 변환
         numeric_cols = ['총 점수', '점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
                         '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
                         '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
@@ -104,41 +104,40 @@ if uploaded_file:
             branch_color_map = None
             branch_order = None
 
-        # ------------------ 1. 사장님 보고용 시각화 ------------------
+        # ------------------ 1. 사장님 보고용 시각화 (D4: 총 점수 기준) ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수 (점수/총 점수)
+        # [왼쪽] 지사별 평균 서비스 점수 (총 점수)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
-            target_score = '점수' if '점수' in df.columns else '총 점수'
-            if '지사' in df.columns and target_score in df.columns:
-                branch_avg = df.groupby("지사", as_index=False)[target_score].mean()
+            if '지사' in df.columns and '총 점수' in df.columns:
+                branch_avg = df.groupby("지사", as_index=False)['총 점수'].mean()
                 fig2 = px.bar(
                     branch_avg, 
                     x="지사", 
-                    y=target_score, 
+                    y="총 점수", 
                     color="지사",
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
                     text_auto='.2f',
-                    title="지사별 서비스 평가 평균 점수",
+                    title="지사별 서비스 평가 평균 점수 (총 점수)",
                     height=550
                 )
                 fig2.update_layout(font=dict(size=15))
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # [오른쪽] 미입력 건수 vs 점수
+        # [오른쪽] 미입력 건수 vs 총 점수
         with right_col:
-            st.subheader("💡 미입력 건수 vs 점수")
-            if '미입력' in df.columns and target_score in df.columns:
+            st.subheader("💡 미입력 건수 vs 총 점수")
+            if '미입력' in df.columns and '총 점수' in df.columns:
                 fig1 = px.scatter(
-                    df, x="미입력", y=target_score, 
+                    df, x="미입력", y="총 점수", 
                     color="지사" if "지사" in df.columns else None,
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
                     hover_name="방문 대리점" if "방문 대리점" in df.columns else None,
                     size="총접수건" if "총접수건" in df.columns else None,
-                    title="미입력 건수가 점수 하락에 미치는 영향 (점 크기: 총접수건)",
+                    title="미입력 건수가 총 점수 하락에 미치는 영향 (점 크기: 총접수건)",
                     height=550
                 )
                 fig1.update_layout(font=dict(size=15))
@@ -152,7 +151,7 @@ if uploaded_file:
             s_col_name = display_df.columns[18]
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
 
-        # 2) % 변환 처리 (Z4: 서비스불만율(%) 포함)
+        # 2) % 변환 처리
         percent_cols = ['입력율(%)', '방문율', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
 
         for p_col in percent_cols:
@@ -180,7 +179,6 @@ if uploaded_file:
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                # Y4(불만건수), Z4(서비스불만율(%)), AA4(점수) 표 순서 적용
                 dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
                 top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[dissatisfied_cols].head(10)
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
