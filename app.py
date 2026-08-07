@@ -5,25 +5,25 @@ from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ 전체 폰트 및 UI 요소 확대 CSS 스타일 (기존 대비 +4px 적용) ------------------
+# ------------------ 전체 폰트 및 UI 요소 확대 CSS 스타일 ------------------
 st.markdown("""
     <style>
-        /* 1. 전체 기본 폰트 크기 확대 (+4px -> 28px) */
+        /* 1. 전체 기본 폰트 크기 확대 */
         html, body, [class*="css"] {
             font-size: 28px !important;
         }
         
-        /* 2. 제목 및 헤더 폰트 크기 (+0.2rem) */
+        /* 2. 제목 및 헤더 폰트 크기 */
         h1 { font-size: 3.4rem !important; }
         h2 { font-size: 2.8rem !important; }
         h3 { font-size: 2.4rem !important; }
         
-        /* 3. 표(Dataframe) 내부 글자 크기 (+4px -> 26px) */
+        /* 3. 표(Dataframe) 내부 글자 크기 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
             font-size: 26px !important;
         }
         
-        /* 4. 드롭다운(Selectbox) 본문 및 라벨 글자 크기 (+4px) */
+        /* 4. 드롭다운(Selectbox) 본문 및 라벨 글자 크기 */
         div[data-baseweb="select"] * {
             font-size: 26px !important;
         }
@@ -32,7 +32,7 @@ st.markdown("""
             font-weight: bold !important;
         }
 
-        /* 5. 파일 업로더 글자 크기 (+4px -> 28px) */
+        /* 5. 파일 업로더 글자 크기 */
         .stFileUploader label {
             font-size: 28px !important;
         }
@@ -40,7 +40,7 @@ st.markdown("""
             padding: 2rem !important;
         }
 
-        /* 6. 탭(Tab) 버튼 폰트 및 여백 (+4px -> 27px) */
+        /* 6. 탭(Tab) 버튼 폰트 및 여백 */
         button[data-baseweb="tab"] {
             font-size: 27px !important;
             padding: 12px 24px !important;
@@ -61,9 +61,7 @@ def parse_time_to_seconds(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
         return None
     try:
-        if isinstance(val, time):
-            return val.hour * 3600 + val.minute * 60 + val.second
-        elif isinstance(val, datetime):
+        if isinstance(val, (time, datetime)):
             return val.hour * 3600 + val.minute * 60 + val.second
         elif isinstance(val, pd.Timedelta):
             return int(val.total_seconds())
@@ -83,9 +81,7 @@ def format_time_duration(val):
     if pd.isna(val) or val == "" or str(val).strip() == "":
         return ""
     try:
-        if isinstance(val, time):
-            hours, minutes = val.hour, val.minute
-        elif isinstance(val, datetime):
+        if isinstance(val, (time, datetime)):
             hours, minutes = val.hour, val.minute
         elif isinstance(val, pd.Timedelta):
             total_seconds = int(val.total_seconds())
@@ -151,70 +147,111 @@ if uploaded_file:
             branch_color_map = {branch: palette[i % len(palette)] for i, branch in enumerate(unique_branches)}
             branch_order = {"지사": unique_branches}
         else:
+            unique_branches = []
             branch_color_map = None
             branch_order = None
+
+        # ------------------ 사이드바 지사 필터 연동 (1번 반영) ------------------
+        st.sidebar.header("🔍 대시보드 필터")
+        branch_options = ["전체"] + list(unique_branches)
+        selected_sidebar_branch = st.sidebar.selectbox("조회할 지사를 선택하세요", branch_options, key="sidebar_branch")
+
+        # 필터링된 데이터프레임 생성
+        if selected_sidebar_branch != "전체" and '지사' in df.columns:
+            filtered_main_df = df[df['지사'] == selected_sidebar_branch]
+        else:
+            filtered_main_df = df.copy()
+
+        # ------------------ 상단 KPI 요약 카드 (2번 반영) ------------------
+        st.markdown("### 📌 서비스 평가 핵심 요약")
+        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+
+        total_agencies = len(filtered_main_df)
+        avg_score = filtered_main_df['총 점수'].mean() if '총 점수' in filtered_main_df.columns else 0
+
+        # 지사별 평균 점수 산출
+        if '지사' in df.columns and '총 점수' in df.columns:
+            branch_means = df.dropna(subset=['총 점수']).groupby("지사")['총 점수'].mean()
+            best_branch = branch_means.idxmax() if not branch_means.empty else "N/A"
+            best_score = branch_means.max() if not branch_means.empty else 0
+            worst_branch = branch_means.idxmin() if not branch_means.empty else "N/A"
+            worst_score = branch_means.min() if not branch_means.empty else 0
+        else:
+            best_branch, best_score, worst_branch, worst_score = "N/A", 0, "N/A", 0
+
+        kpi1.metric("총 대리점 수", f"{total_agencies:,} 개소")
+        kpi2.metric("전체 평균 점수", f"{avg_score:.2f} 점" if pd.notnull(avg_score) else "N/A")
+        kpi3.metric("최고 점수 지사", f"{best_branch}", f"{best_score:.2f}점" if best_score else "")
+        kpi4.metric("최저 점수 지사", f"{worst_branch}", f"{worst_score:.2f}점" if worst_score else "")
+
+        st.markdown("---")
 
         # ------------------ 1. 시각화 영역 ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수 (1번 이미지 수정)
+        # [왼쪽] 지사별 평균 서비스 점수 (1번 이미지 수정 반영)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
-            if '지사' in df.columns and '총 점수' in df.columns:
-                branch_avg = df.dropna(subset=['총 점수']).groupby("지사", as_index=False)['총 점수'].mean()
-                fig2 = px.bar(
-                    branch_avg, 
-                    x="지사", 
-                    y="총 점수", 
-                    color="지사",
-                    color_discrete_map=branch_color_map,
-                    category_orders=branch_order,
-                    text_auto='.2f',
-                    title="지사별 서비스 평가 평균 점수 (총 점수)",
-                    height=550
-                )
-                fig2.update_layout(
-                    font=dict(size=21),
-                    # X축 라벨 크기 4px 축소(20px -> 16px) 및 기울임 방지(tickangle=0)
-                    xaxis=dict(tickfont=dict(size=16), tickangle=0),
-                    yaxis=dict(tickfont=dict(size=20))
-                )
-                st.plotly_chart(fig2, use_container_width=True)
+            if '지사' in filtered_main_df.columns and '총 점수' in filtered_main_df.columns:
+                branch_avg = filtered_main_df.dropna(subset=['총 점수']).groupby("지사", as_index=False)['총 점수'].mean()
+                if not branch_avg.empty:
+                    fig2 = px.bar(
+                        branch_avg, 
+                        x="지사", 
+                        y="총 점수", 
+                        color="지사",
+                        color_discrete_map=branch_color_map,
+                        category_orders=branch_order,
+                        text_auto='.2f',
+                        title="지사별 서비스 평가 평균 점수 (총 점수)",
+                        height=550
+                    )
+                    fig2.update_layout(
+                        font=dict(size=21),
+                        # X축 라벨 크기 4px 축소(20px -> 16px) 및 기울임 방지(tickangle=0)
+                        xaxis=dict(tickfont=dict(size=16), tickangle=0),
+                        yaxis=dict(tickfont=dict(size=20))
+                    )
+                    st.plotly_chart(fig2, use_container_width=True)
+                else:
+                    st.info("표시할 평균 데이터가 없습니다.")
 
-        # [오른쪽] 총 점수 vs 총접수건 (2번 이미지 수정)
+        # [오른쪽] 총 점수 vs 총접수건 (2번 이미지 수정 반영)
         with right_col:
             st.subheader("💡 총 점수 vs 총접수건")
-            total_cnt_col = '총접수건' if '총접수건' in df.columns else ('총접수' if '총접수' in df.columns else None)
+            total_cnt_col = '총접수건' if '총접수건' in filtered_main_df.columns else ('총접수' if '총접수' in filtered_main_df.columns else None)
             
-            if total_cnt_col and '총 점수' in df.columns:
-                scatter_df = df.dropna(subset=[total_cnt_col, '총 점수'])
-                fig1 = px.scatter(
-                    scatter_df, x=total_cnt_col, y="총 점수", 
-                    color="지사" if "지사" in scatter_df.columns else None,
-                    color_discrete_map=branch_color_map,
-                    category_orders=branch_order,
-                    hover_name="방문 대리점" if "방문 대리점" in scatter_df.columns else None,
-                    title="총접수건 대비 총 점수 분포",
-                    height=550
-                )
-                
-                fig1.update_traces(marker=dict(size=10))
-                
-                fig1.update_layout(
-                    font=dict(size=21),
-                    xaxis=dict(tickfont=dict(size=20)),
-                    yaxis=dict(tickfont=dict(size=20)),
-                    # 우측 범례 텍스트 크기 4px 축소 (24px -> 20px)
-                    legend=dict(
-                        font=dict(size=20),
-                        title=dict(font=dict(size=20))
+            if total_cnt_col and '총 점수' in filtered_main_df.columns:
+                scatter_df = filtered_main_df.dropna(subset=[total_cnt_col, '총 점수'])
+                if not scatter_df.empty:
+                    fig1 = px.scatter(
+                        scatter_df, x=total_cnt_col, y="총 점수", 
+                        color="지사" if "지사" in scatter_df.columns else None,
+                        color_discrete_map=branch_color_map,
+                        category_orders=branch_order,
+                        hover_name="방문 대리점" if "방문 대리점" in scatter_df.columns else None,
+                        title="총접수건 대비 총 점수 분포",
+                        height=550
                     )
-                )
-                st.plotly_chart(fig1, use_container_width=True)
-
+                    
+                    fig1.update_traces(marker=dict(size=10))
+                    
+                    fig1.update_layout(
+                        font=dict(size=21),
+                        xaxis=dict(tickfont=dict(size=20)),
+                        yaxis=dict(tickfont=dict(size=20)),
+                        # 우측 범례 텍스트 크기 4px 축소 (24px -> 20px)
+                        legend=dict(
+                            font=dict(size=20),
+                            title=dict(font=dict(size=20))
+                        )
+                    )
+                    st.plotly_chart(fig1, use_container_width=True)
+                else:
+                    st.info("표시할 분포 데이터가 없습니다.")
 
         # ------------------ 2. 표 서식 적용 ------------------
-        display_df = df.copy()
+        display_df = filtered_main_df.copy()
         if s_col_name:
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
 
@@ -237,9 +274,9 @@ if uploaded_file:
         with col_1a:
             st.subheader("📋 조치정보입력율 현황")
             tab_act_top, tab_act_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '조치입력 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '조치입력 점수' in filtered_main_df.columns:
                 act_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미방문', '미입력', '방문 입력건', '입력율(%)', '조치입력 점수', '총 점수'] if c in display_df.columns]
-                valid_act_df = df.dropna(subset=['조치입력 점수'])
+                valid_act_df = filtered_main_df.dropna(subset=['조치입력 점수'])
                 with tab_act_top:
                     idx = valid_act_df.sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, act_cols].head(20).rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -250,9 +287,9 @@ if uploaded_file:
         with col_1b:
             st.subheader("📉 미입력 건수 현황")
             tab_unentered_top, tab_unentered_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '불만 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '불만 점수' in filtered_main_df.columns:
                 unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_unentered_df = df.dropna(subset=['불만 점수'])
+                valid_unentered_df = filtered_main_df.dropna(subset=['불만 점수'])
                 with tab_unentered_top:
                     idx = valid_unentered_df.sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, unentered_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -265,9 +302,9 @@ if uploaded_file:
         with col_2a:
             st.subheader("📅 약속시간입력율 현황")
             tab_res_top, tab_res_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '예약 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '예약 점수' in filtered_main_df.columns:
                 reservation_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
-                valid_res_df = df.dropna(subset=['예약 점수'])
+                valid_res_df = filtered_main_df.dropna(subset=['예약 점수'])
                 with tab_res_top:
                     idx = valid_res_df.sort_values(by=['예약 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, reservation_cols].head(20).rename(columns={'예약 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -278,9 +315,9 @@ if uploaded_file:
         with col_2b:
             st.subheader("⏱️ 평균처리시간 현황")
             tab_time_top, tab_time_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '처리시간 점수' in df.columns and s_col_name:
+            if '방문 대리점' in filtered_main_df.columns and '처리시간 점수' in filtered_main_df.columns and s_col_name:
                 time_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                valid_time_df = df.dropna(subset=['처리시간 점수'])
+                valid_time_df = filtered_main_df.dropna(subset=['처리시간 점수'])
                 with tab_time_top:
                     idx = valid_time_df.sort_values(by=['처리시간 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, time_cols].head(20).rename(columns={'처리시간 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -293,9 +330,9 @@ if uploaded_file:
         with col_3a:
             st.subheader("🔄 재방문율 현황")
             tab_re_top, tab_re_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '재방문 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '재방문 점수' in filtered_main_df.columns:
                 re_cols = [c for c in ['지사', '방문 대리점', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수'] if c in display_df.columns]
-                valid_re_df = df.dropna(subset=['재방문 점수'])
+                valid_re_df = filtered_main_df.dropna(subset=['재방문 점수'])
                 with tab_re_top:
                     idx = valid_re_df.sort_values(by=['재방문 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, re_cols].head(20).rename(columns={'재방문 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -306,9 +343,9 @@ if uploaded_file:
         with col_3b:
             st.subheader("⚠️ 서비스 불만율 현황")
             tab_dissat_top, tab_dissat_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '불만 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '불만 점수' in filtered_main_df.columns:
                 dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_dissat_df = df.dropna(subset=['불만 점수'])
+                valid_dissat_df = filtered_main_df.dropna(subset=['불만 점수'])
                 with tab_dissat_top:
                     idx = valid_dissat_df.sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, dissatisfied_cols].head(20).rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -321,9 +358,9 @@ if uploaded_file:
         with col_4a:
             st.subheader("📢 독촉율 현황")
             tab_urge_top, tab_urge_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '독촉 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '독촉 점수' in filtered_main_df.columns:
                 urge_cols = [c for c in ['지사', '방문 대리점', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수'] if c in display_df.columns]
-                valid_urge_df = df.dropna(subset=['독촉 점수'])
+                valid_urge_df = filtered_main_df.dropna(subset=['독촉 점수'])
                 with tab_urge_top:
                     idx = valid_urge_df.sort_values(by=['독촉 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, urge_cols].head(20).rename(columns={'독촉 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -334,9 +371,9 @@ if uploaded_file:
         with col_4b:
             st.subheader("😊 고객만족도 현황")
             tab_csat_top, tab_csat_low = st.tabs(["🔝 TOP 20 (점수 상위)", "🔻 LOW 20 (점수 하위)"])
-            if '방문 대리점' in df.columns and '고객만족도 점수' in df.columns:
+            if '방문 대리점' in filtered_main_df.columns and '고객만족도 점수' in filtered_main_df.columns:
                 csat_cols = [c for c in ['지사', '방문 대리점', '합계', '총건', '고객만족도 점수', '총 점수'] if c in display_df.columns]
-                valid_csat_df = df.dropna(subset=['고객만족도 점수'])
+                valid_csat_df = filtered_main_df.dropna(subset=['고객만족도 점수'])
                 with tab_csat_top:
                     idx = valid_csat_df.sort_values(by=['고객만족도 점수', '총 점수'], ascending=[False, False]).index
                     st.dataframe(display_df.loc[idx, csat_cols].head(20).rename(columns={'고객만족도 점수': '점수'}), use_container_width=True, hide_index=True, height=450)
@@ -348,7 +385,7 @@ if uploaded_file:
         st.markdown("---")
         st.subheader("🏢 지사별 대리점 상세 현황 조회")
         
-        branch_list = ["전체"] + list(df['지사'].dropna().unique()) if '지사' in df.columns else ["전체"]
+        branch_list = ["전체"] + list(unique_branches)
 
         col_sel_1a, col_sel_1b = st.columns(2)
         with col_sel_1a:
@@ -356,7 +393,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '조치입력 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미방문', '미입력', '방문 입력건', '입력율(%)', '조치입력 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['조치입력 점수']).sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['조치입력 점수']).sort_values(by=['조치입력 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'조치입력 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_1b:
@@ -364,7 +401,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '불만 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         col_sel_2a, col_sel_2b = st.columns(2)
@@ -373,7 +410,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '예약 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['예약 점수']).sort_values(by=['예약 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['예약 점수']).sort_values(by=['예약 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'예약 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_2b:
@@ -381,7 +418,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '처리시간 점수' in df.columns and s_col_name:
                 target_cols = [c for c in ['지사', '방문 대리점', s_col_name, '처리시간 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['처리시간 점수']).sort_values(by=['처리시간 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['처리시간 점수']).sort_values(by=['처리시간 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'처리시간 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         col_sel_3a, col_sel_3b = st.columns(2)
@@ -390,7 +427,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '재방문 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['재방문 점수']).sort_values(by=['재방문 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['재방문 점수']).sort_values(by=['재방문 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'재방문 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_3b:
@@ -398,7 +435,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '불만 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '불만 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['불만 점수']).sort_values(by=['불만 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'불만 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         col_sel_4a, col_sel_4b = st.columns(2)
@@ -407,7 +444,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '독촉 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '독촉건수', '독촉율(%)', '독촉 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['독촉 점수']).sort_values(by=['독촉 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['독촉 점수']).sort_values(by=['독촉 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'독촉 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         with col_sel_4b:
@@ -415,7 +452,7 @@ if uploaded_file:
             filtered = display_df if selected_branch == "전체" else display_df[display_df['지사'] == selected_branch]
             if '방문 대리점' in df.columns and '고객만족도 점수' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '합계', '총건', '고객만족도 점수', '총 점수'] if c in display_df.columns]
-                valid_idx = df.loc[filtered.index].dropna(subset=['고객만족도 점수']).sort_values(by=['고객만족도 점수', '총 점수'], ascending=[False, False]).index
+                valid_idx = filtered.dropna(subset=['고객만족도 점수']).sort_values(by=['고객만족도 점수', '총 점수'], ascending=[False, False]).index
                 st.dataframe(filtered.loc[valid_idx, target_cols].rename(columns={'고객만족도 점수': '점수'}), use_container_width=True, hide_index=True, height=430)
 
         # ------------------ 5. 전체 대리점 조회 ------------------
@@ -423,7 +460,7 @@ if uploaded_file:
         st.subheader("🔍 대리점별 전체 항목 조회")
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
         if '지사' in clean_display_df.columns:
-            selected_branch = st.selectbox("지사를 선택하세요 (전체 조회)", ["전체"] + list(clean_display_df["지사"].dropna().unique()), key="select_all")
+            selected_branch = st.selectbox("지사를 선택하세요 (전체 조회)", ["전체"] + list(unique_branches), key="select_all")
             filtered_df = clean_display_df if selected_branch == "전체" else clean_display_df[clean_display_df["지사"] == selected_branch]
             st.dataframe(filtered_df, use_container_width=True, height=520)
         else:
