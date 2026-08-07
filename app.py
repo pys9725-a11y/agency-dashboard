@@ -6,7 +6,7 @@ from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ 전체 폰트 및 UI 요소 확대 CSS 스타일 ------------------
+# ------------------ 전체 폰트, UI 및 카드 커스텀 CSS 스타일 ------------------
 st.markdown("""
     <style>
         /* 1. 전체 기본 폰트 크기 확대 */
@@ -21,14 +21,14 @@ st.markdown("""
         
         /* 3. 표(Dataframe) 내부 글자 크기 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
-            font-size: 26px !important;
+            font-size: 24px !important;
         }
         
         /* 4. 드롭다운 및 라디오 버튼 글자 크기 */
         div[data-baseweb="select"] * {
             font-size: 24px !important;
         }
-        div[data-widget="selectbox"] label, .stSelectbox label, .stRadio label {
+        div[data-widget="selectbox"] label, .stSelectbox label {
             font-size: 22px !important;
             font-weight: bold !important;
         }
@@ -48,6 +48,36 @@ st.markdown("""
         }
         button[data-baseweb="tab"] div {
             font-size: 22px !important;
+        }
+
+        /* 7. [신규] KPI 및 메트릭 카드 입체 스타일링 */
+        div[data-testid="stMetric"] {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        div[data-testid="stMetric"]:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            border-color: #cbd5e1;
+        }
+        div[data-testid="stMetricLabel"] {
+            font-size: 20px !important;
+            font-weight: 700 !important;
+            color: #475569 !important;
+            margin-bottom: 8px;
+        }
+        div[data-testid="stMetricValue"] {
+            font-size: 32px !important;
+            font-weight: 800 !important;
+            color: #1e293b !important;
+        }
+        div[data-testid="stMetricDelta"] {
+            font-size: 18px !important;
+            font-weight: 600 !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -103,6 +133,43 @@ def format_time_duration(val):
             return "0분"
     except Exception:
         return str(val)
+
+# [신규] 표 조건부 서식(Highlighting) 적용 함수
+def apply_highlight_styler(df_sub, target_col, mode='top'):
+    """
+    df_sub: 표 데이터프레임
+    target_col: 색상을 강조할 주요 지표 컬럼명
+    mode: 'top' (상위 우수 - 연한 초록), 'low' (하위 주의 - 연한 빨간/주황)
+    """
+    def style_cell(val):
+        if mode == 'top':
+            return 'background-color: #e6f4ea; color: #137333; font-weight: bold;'
+        elif mode == 'low':
+            return 'background-color: #fce8e6; color: #c5221f; font-weight: bold;'
+        return ''
+
+    styler = df_sub.style
+    if target_col in df_sub.columns:
+        styler = styler.map(style_cell, subset=[target_col])
+    return styler
+
+def apply_overall_table_styler(df_input):
+    """ 전체 대리점 표의 '총 점수' 강조 서식 """
+    def highlight_total_score(val):
+        try:
+            num = float(str(val).replace(',', '').replace('%', ''))
+            if num >= 90:
+                return 'background-color: #e6f4ea; color: #137333; font-weight: bold;'
+            elif num < 70:
+                return 'background-color: #fce8e6; color: #c5221f; font-weight: bold;'
+        except ValueError:
+            pass
+        return ''
+
+    styler = df_input.style
+    if '총 점수' in df_input.columns:
+        styler = styler.map(highlight_total_score, subset=['총 점수'])
+    return styler
 
 # 엑셀 파일 업로드
 uploaded_file = st.file_uploader("월별 서비스 평가 엑셀 파일을 업로드하세요", type=["xlsx"])
@@ -257,7 +324,7 @@ if uploaded_file:
             if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
-        # ------------------ 8개 항목 전체 현황 (한 줄에 2개씩 배치) ------------------
+        # ------------------ 8개 항목 전체 현황 (한 줄에 2개씩 배치 & 조건부 서식) ------------------
         st.markdown("---")
         st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
@@ -272,7 +339,6 @@ if uploaded_file:
             ("8. 고객만족도 점수", '고객만족도 점수', ['지사', '방문 대리점', '총접수건', '고객만족도 점수', '총 점수'])
         ]
 
-        # 2개씩 쌍을 이루어 한 라인(2컬럼)에 배치
         for i in range(0, len(indicators_info), 2):
             col1, col2 = st.columns(2)
             
@@ -283,13 +349,15 @@ if uploaded_file:
                 sub_cols1 = [c for c in target_cols1 if c in display_df.columns]
                 if col_key1 in filtered_main_df.columns:
                     valid_sub_df1 = filtered_main_df.dropna(subset=[col_key1])
-                    top_tab1, low_tab1 = st.tabs(["🔝 TOP 20", "🔻 LOW 20"])
+                    top_tab1, low_tab1 = st.tabs(["🔝 TOP 20 (우수)", "🔻 LOW 20 (주의)"])
                     with top_tab1:
                         idx_top1 = valid_sub_df1.sort_values(by=[col_key1, '총 점수'], ascending=[False, False]).index
-                        st.dataframe(display_df.loc[idx_top1, sub_cols1].head(20), use_container_width=True, hide_index=True, height=360)
+                        styled_top1 = apply_highlight_styler(display_df.loc[idx_top1, sub_cols1].head(20), col_key1, mode='top')
+                        st.dataframe(styled_top1, use_container_width=True, hide_index=True, height=360)
                     with low_tab1:
                         idx_low1 = valid_sub_df1.sort_values(by=[col_key1, '총 점수'], ascending=[True, False]).index
-                        st.dataframe(display_df.loc[idx_low1, sub_cols1].head(20), use_container_width=True, hide_index=True, height=360)
+                        styled_low1 = apply_highlight_styler(display_df.loc[idx_low1, sub_cols1].head(20), col_key1, mode='low')
+                        st.dataframe(styled_low1, use_container_width=True, hide_index=True, height=360)
                 else:
                     st.info(f"'{title_name1}' 관련 데이터 항목을 찾을 수 없습니다.")
 
@@ -301,13 +369,15 @@ if uploaded_file:
                     sub_cols2 = [c for c in target_cols2 if c in display_df.columns]
                     if col_key2 in filtered_main_df.columns:
                         valid_sub_df2 = filtered_main_df.dropna(subset=[col_key2])
-                        top_tab2, low_tab2 = st.tabs(["🔝 TOP 20", "🔻 LOW 20"])
+                        top_tab2, low_tab2 = st.tabs(["🔝 TOP 20 (우수)", "🔻 LOW 20 (주의)"])
                         with top_tab2:
                             idx_top2 = valid_sub_df2.sort_values(by=[col_key2, '총 점수'], ascending=[False, False]).index
-                            st.dataframe(display_df.loc[idx_top2, sub_cols2].head(20), use_container_width=True, hide_index=True, height=360)
+                            styled_top2 = apply_highlight_styler(display_df.loc[idx_top2, sub_cols2].head(20), col_key2, mode='top')
+                            st.dataframe(styled_top2, use_container_width=True, hide_index=True, height=360)
                         with low_tab2:
                             idx_low2 = valid_sub_df2.sort_values(by=[col_key2, '총 점수'], ascending=[True, False]).index
-                            st.dataframe(display_df.loc[idx_low2, sub_cols2].head(20), use_container_width=True, hide_index=True, height=360)
+                            styled_low2 = apply_highlight_styler(display_df.loc[idx_low2, sub_cols2].head(20), col_key2, mode='low')
+                            st.dataframe(styled_low2, use_container_width=True, hide_index=True, height=360)
                     else:
                         st.info(f"'{title_name2}' 관련 데이터 항목을 찾을 수 없습니다.")
 
@@ -476,11 +546,14 @@ if uploaded_file:
                     )
                     st.plotly_chart(fig_comp, use_container_width=True)
 
-        # ------------------ 전체 대리점 목록 조회 표 ------------------
+        # ------------------ 전체 대리점 목록 조회 표 (조건부 서식) ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
-        st.dataframe(clean_display_df, use_container_width=True, height=520)
+        
+        # 전체 표 '총 점수' 컬럼 서식 적용 (90점 이상: 초록, 70점 미만: 빨간색)
+        styled_overall_df = apply_overall_table_styler(clean_display_df)
+        st.dataframe(styled_overall_df, use_container_width=True, height=520)
 
     except Exception as e:
         st.error(f"⚠️ 데이터를 읽는 중 오류가 발생했습니다: {e}")
