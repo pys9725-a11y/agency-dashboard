@@ -15,7 +15,7 @@ st.markdown("""
         }
         
         /* 2. 제목 및 헤더 폰트 크기 */
-        h1 { font-size: 3.4rem !important; }
+        h1 { font-size: 3.0rem !important; }
         h2 { font-size: 2.8rem !important; }
         h3 { font-size: 2.4rem !important; }
         
@@ -24,18 +24,16 @@ st.markdown("""
             font-size: 26px !important;
         }
         
-        /* 4. 드롭다운(Selectbox) 본문 및 라벨 글자 크기 */
+        /* 4. 드롭다운 및 라디오 버튼 글자 크기 */
         div[data-baseweb="select"] * {
-            font-size: 26px !important;
+            font-size: 24px !important;
         }
-        div[data-widget="selectbox"] label, .stSelectbox label {
-            font-size: 28px !important;
+        div[data-widget="selectbox"] label, .stSelectbox label, .stRadio label {
+            font-size: 22px !important;
             font-weight: bold !important;
         }
-
-        /* [추가] 제목 옆 필터 수직 정렬 스타일 */
-        div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-of-type(1) > div {
-            margin-top: 1.5rem; /* 제목과 필터 높이를 맞춥니다 */
+        div[role="radiogroup"] label span {
+            font-size: 24px !important;
         }
 
         /* 5. 파일 업로더 글자 크기 */
@@ -48,11 +46,11 @@ st.markdown("""
 
         /* 6. 탭(Tab) 버튼 폰트 및 여백 */
         button[data-baseweb="tab"] {
-            font-size: 27px !important;
-            padding: 12px 24px !important;
+            font-size: 24px !important;
+            padding: 10px 20px !important;
         }
         button[data-baseweb="tab"] div {
-            font-size: 27px !important;
+            font-size: 24px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -114,7 +112,6 @@ uploaded_file = st.file_uploader("월별 서비스 평가 엑셀 파일을 업�
 
 if uploaded_file:
     try:
-        # 데이터 로드 및 전처리
         df = pd.read_excel(uploaded_file, sheet_name='평가', header=3)
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
@@ -159,42 +156,33 @@ if uploaded_file:
             branch_color_map = {}
             branch_order = None
 
-        # =========================================================================
-        # ------------------ [수정] 상단 제목 옆 필터 배치 ------------------
-        # =========================================================================
+        # ------------------ 상단 타이틀 및 메인 필터 수평 배치 ------------------
+        title_col, filter_col1, filter_col2 = st.columns([2.2, 1, 1])
         
-        # 3개의 컬럼 생성 (제목, 지사 필터, 대리점 필터)
-        title_col, branch_col, agency_col = st.columns([3, 1, 1.5])
-
         with title_col:
             st.title("📊 대리점 서비스 평가 현황")
 
-        # 필터 목록 준비
         branch_options = ["전체"] + list(unique_branches)
         
-        with branch_col:
-            # 사이드바에서 메인 화면으로 이동
-            selected_branch = st.selectbox("🔍 지사 선택", branch_options, key="main_branch_selectbox")
+        with filter_col1:
+            selected_branch = st.selectbox("🔍 조회할 지사 선택", branch_options, key="main_branch")
 
-        # 지사 선택에 따른 대리점 목록 동적 연동
         if selected_branch != "전체" and '지사' in df.columns:
             filtered_agencies = sorted(df[df['지사'] == selected_branch]['방문 대리점'].dropna().unique())
         else:
             filtered_agencies = sorted(df['방문 대리점'].dropna().unique())
 
-        with agency_col:
-            # 사이드바에서 메인 화면으로 이동
-            selected_agency = st.selectbox("🏢 대리점 선택", filtered_agencies, key="main_agency_selectbox")
+        with filter_col2:
+            selected_agency = st.selectbox("🏢 조회할 대리점 선택", filtered_agencies, key="main_agency")
 
         st.markdown("---")
 
-        # 메인 대시보드 데이터 필터링
+        # ------------------ 전체 / 지사 대시보드 영역 ------------------
         if selected_branch != "전체" and '지사' in df.columns:
             filtered_main_df = df[df['지사'] == selected_branch]
         else:
             filtered_main_df = df.copy()
 
-        # =================KPI 요약=================
         st.markdown("### 📌 서비스 평가 핵심 요약")
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 
@@ -217,7 +205,6 @@ if uploaded_file:
 
         st.markdown("---")
 
-        # =================시각화=================
         left_col, right_col = st.columns(2)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
@@ -258,10 +245,6 @@ if uploaded_file:
                     )
                     st.plotly_chart(fig1, use_container_width=True)
 
-        # =================현황 상세 (Tabs)=================
-        st.markdown("---")
-        st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
-        
         display_df = filtered_main_df.copy()
         if s_col_name:
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
@@ -277,12 +260,15 @@ if uploaded_file:
             if col not in percent_cols and col != '_s_seconds':
                 display_df[col] = display_df[col].apply(lambda x: f"{x:.2f}" if pd.notnull(x) else "")
 
+        # ------------------ 8개 항목 전체 현황 (8개 탭) ------------------
+        st.markdown("---")
+        st.subheader("📋 8개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
+        
         tabs = st.tabs([
             "1. 조치입력 점수", "2. 조치정보입력율", "3. 약속시간 점수", "4. 처리시간 점수",
             "5. 재방문 점수", "6. 불만 점수", "7. 독촉 점수", "8. 고객만족도 점수"
         ])
 
-        # 각 탭에 대한 데이터 정보 (탭 인덱스 0~7)
         indicators_info = [
             ("조치입력 점수", ['지사', '방문 대리점', '총접수건', '조치입력 점수', '총 점수']),
             ("입력율(%)", ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
@@ -311,42 +297,42 @@ if uploaded_file:
                 else:
                     st.info(f"'{col_key}' 관련 데이터 항목을 찾을 수 없습니다.")
 
-        # =================대리점 상세 리포트=================
+        # ------------------ 대리점별 상세 리포트 영역 ------------------
         st.markdown("---")
-        # 동적으로 컬럼 제목 변경
-        if selected_agency:
-            agency_row = df[df['방문 대리점'] == selected_agency]
-            if not agency_row.empty:
-                agency_data = agency_row.iloc[0]
-                agency_branch = agency_data.get('지사', '미지정')
-                st.subheader(f"🏢 [{agency_branch}] **{selected_agency}** 평가 상세 리포트")
-            else:
-                st.subheader(f"🏢 선택한 대리점 상세 리포트")
-        else:
-            st.subheader(f"🏢 대리점 상세 리포트 (필터를 사용하여 대리점을 선택하세요)")
-
         if not selected_agency:
             st.warning("상단 검색 창에서 대리점을 선택해 주세요.")
         else:
+            agency_row = df[df['방문 대리점'] == selected_agency]
+            
             if agency_row.empty:
                 st.info("선택한 대리점의 데이터가 존재하지 않습니다.")
             else:
-                # [상세 리포트 KPI]
-                c1, c2, c3, c4 = st.columns(4)
+                agency_data = agency_row.iloc[0]
+                agency_branch = agency_data.get('지사', '미지정')
                 
+                st.markdown(f"## 🏢 [{agency_branch}] **{selected_agency}** 평가 상세 리포트")
+                
+                total_agencies_count = len(df)
                 overall_rank = df['총 점수'].rank(ascending=False, method='min')[agency_row.index[0]] if '총 점수' in df.columns else None
-                branch_rank = df[df['지사'] == agency_branch]['총 점수'].rank(ascending=False, method='min')[agency_row.index[0]] if '총 점수' in df.columns else None
+                
+                branch_agencies = df[df['지사'] == agency_branch] if agency_branch != '미지정' else df
+                branch_agencies_count = len(branch_agencies)
+                branch_rank = branch_agencies['총 점수'].rank(ascending=False, method='min')[agency_row.index[0]] if '총 점수' in df.columns else None
 
+                # 1. 상단 요약 카드
+                c1, c2, c3, c4 = st.columns(4)
                 c1.metric("총 점수", f"{agency_data.get('총 점수', 0):.2f} 점")
-                c2.metric("지사 내 순위", f"{int(branch_rank)}위 / {len(df[df['지사'] == agency_branch])}개" if pd.notnull(branch_rank) else "N/A")
-                c3.metric("전체 순위", f"{int(overall_rank)}위 / {len(df)}개" if pd.notnull(overall_rank) else "N/A")
+                c2.metric("지사 내 순위", f"{int(branch_rank)}위 / {branch_agencies_count}개" if pd.notnull(branch_rank) else "N/A")
+                c3.metric("전체 순위", f"{int(overall_rank)}위 / {total_agencies_count}개" if pd.notnull(overall_rank) else "N/A")
+                
                 tot_receipt = agency_data.get('총접수건', agency_data.get('총접수', 0))
                 c4.metric("총 접수건수", f"{int(tot_receipt):,} 건" if pd.notnull(tot_receipt) else "0 건")
 
                 st.markdown("---")
 
-                # [상세 리포트 8개 평가 지표 카드]
-                st.markdown("### 📋 항목별 세부 성과 현황")
+                # 2. 8개 평가 지표 현황 카드
+                st.markdown("### 📋 8개 평가 지표별 세부 성과 현황")
+                
                 m1, m2, m3, m4 = st.columns(4)
                 m1.metric("1. 조치입력 점수", f"{agency_data.get('조치입력 점수', 0):.2f} 점")
 
@@ -380,74 +366,102 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # [상세 리포트 점수 비교 그래프]
+                # 3. 평균 대비 세부 항목 점수 비교 차트
                 st.markdown("### 📊 평균 대비 세부 항목 점수 비교")
+                
                 score_cols = [
                     '조치입력 점수', '조치정보입력율 점수', '예약 점수', 
                     '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
                 ]
+                
                 col_display_names = [
                     '조치입력 점수', '조치정보입력율', '예약 점수', 
                     '처리시간 점수', '재방문 점수', '불만 점수', '독촉 점수', '고객만족도 점수'
                 ]
+
                 available_indices = [i for i, c in enumerate(score_cols) if c in df.columns]
                 x_labels = [col_display_names[i] for i in available_indices]
                 actual_cols = [score_cols[i] for i in available_indices]
 
                 if actual_cols:
-                    # 지사 필터링 및 전체 데이터에 대한 지표 평균
-                    branch_mean_cols = [f'{c}_지사평균' for c in actual_cols]
-                    df_all_means = df[actual_cols].mean()
-                    
-                    if selected_branch != "전체":
-                        branch_avg_df = df[df['지사'] == agency_branch]
-                        branch_mean_scores = branch_avg_df[actual_cols].mean()
-                    else:
-                        branch_mean_scores = df[actual_cols].mean() # 지사가 "전체"면 지사평균=전체평균
-
-                    # 대리점 점수
                     agency_scores = [agency_data.get(c, 0) for c in actual_cols]
+                    branch_avg_scores = [branch_agencies[c].mean() for c in actual_cols]
+                    total_avg_scores = [df[c].mean() for c in actual_cols]
 
-                    all_vals = list(df_all_means) + list(branch_mean_scores) + agency_scores
+                    all_vals = total_avg_scores + branch_avg_scores + agency_scores
                     max_y = (max(all_vals) * 1.18) if all_vals else 25
 
                     branch_color = branch_color_map.get(agency_branch, '#F59E0B')
 
                     fig_comp = go.Figure()
-                    
-                    # 1. 전체 평균 (Standard Base)
+
                     fig_comp.add_trace(go.Bar(
-                        x=x_labels, y=df_all_means, name="전체 평균", marker_color='#94A3B8',
-                        text=[f"{v:.2f}" for v in df_all_means], textposition='outside',
+                        x=x_labels,
+                        y=total_avg_scores,
+                        name="전체 평균",
+                        marker_color='#94A3B8',
+                        text=[f"{v:.2f}" for v in total_avg_scores],
+                        textposition='outside',
                         textfont=dict(size=15, weight='bold')
                     ))
 
-                    # 2. 해당 지사 평균 (Regional Bench)
                     fig_comp.add_trace(go.Bar(
-                        x=x_labels, y=branch_mean_scores, name=f"{agency_branch} 평균", marker_color=branch_color,
-                        text=[f"{v:.2f}" for v in branch_mean_scores], textposition='outside',
+                        x=x_labels,
+                        y=branch_avg_scores,
+                        name=f"{agency_branch} 평균",
+                        marker_color=branch_color,
+                        text=[f"{v:.2f}" for v in branch_avg_scores],
+                        textposition='outside',
                         textfont=dict(size=15, weight='bold')
                     ))
 
-                    # 3. 해당 대리점 (Hero Target)
                     fig_comp.add_trace(go.Bar(
-                        x=x_labels, y=agency_scores, name=f"{selected_agency}", marker_color='#2563EB',
-                        text=[f"{v:.2f}" for v in agency_scores], textposition='outside',
+                        x=x_labels,
+                        y=agency_scores,
+                        name=f"{selected_agency}",
+                        marker_color='#2563EB',
+                        text=[f"{v:.2f}" for v in agency_scores],
+                        textposition='outside',
                         textfont=dict(size=16, weight='bold')
                     ))
 
                     fig_comp.update_layout(
-                        barmode='group', bargap=0.20, bargroupgap=0.06,
-                        title=dict(text=f"<b>[{selected_agency}] 주요 항목별 점수 비교</b>", font=dict(size=24, color='#1E293B')),
-                        height=580, margin=dict(l=20, r=20, t=60, b=40), plot_bgcolor='white', paper_bgcolor='white',
+                        barmode='group',
+                        bargap=0.20,
+                        bargroupgap=0.06,
+                        title=dict(
+                            text=f"<b>[{selected_agency}] 주요 항목별 점수 비교</b>",
+                            font=dict(size=24, color='#1E293B')
+                        ),
+                        height=580,
+                        margin=dict(l=20, r=20, t=60, b=40),
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
                         font=dict(size=18, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
-                        xaxis=dict(tickfont=dict(size=16, color='#334155'), showgrid=False),
-                        yaxis=dict(title="점수", title_font=dict(size=18, color='#334155'), tickfont=dict(size=16, color='#64748B'), gridcolor='#F1F5F9', range=[0, max_y]),
-                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(size=17), bgcolor='rgba(255,255,255,0.8)')
+                        xaxis=dict(
+                            tickfont=dict(size=16, color='#334155'),
+                            showgrid=False
+                        ),
+                        yaxis=dict(
+                            title="점수",
+                            title_font=dict(size=18, color='#334155'),
+                            tickfont=dict(size=16, color='#64748B'),
+                            gridcolor='#F1F5F9',
+                            range=[0, max_y]
+                        ),
+                        legend=dict(
+                            orientation="h",
+                            yanchor="bottom",
+                            y=1.02,
+                            xanchor="right",
+                            x=1,
+                            font=dict(size=17),
+                            bgcolor='rgba(255,255,255,0.8)'
+                        )
                     )
                     st.plotly_chart(fig_comp, use_container_width=True)
 
-        # =================대리점 목록 표=================
+        # ------------------ 전체 대리점 목록 조회 표 ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
