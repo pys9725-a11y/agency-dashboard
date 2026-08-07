@@ -169,12 +169,19 @@ if uploaded_file:
         st.markdown("---")
         col_a, col_b = st.columns(2)
         
-        with col_a:
+       with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
+                # 엑셀 M열(13번째 열, index 12)의 데이터를 '점수' 컬럼으로 추가
+                if len(display_df.columns) > 12:
+                    m_col_name = display_df.columns[12]
+                    display_df['점수'] = display_df[m_col_name]
+                
+                # '총 점수' 대신 '점수'로 변경
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[
-                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
+                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '점수'] if c in display_df.columns]
                 ].head(10)
+                
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
         with col_b:
