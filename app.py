@@ -82,11 +82,11 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
-        # M열의 '점수(점)' 항목을 '점수'라는 이름으로 변경
+        # AA4 '점수(점)' 항목을 화면 표시용 '점수'로 이름 변경
         if '점수(점)' in df.columns:
             df = df.rename(columns={'점수(점)': '점수'})
         
-        # 주요 수치 데이터 숫자로 강제 변환
+        # 주요 수치 데이터 숫자로 강제 변환 (Y4: 불만건수, Z4: 서비스불만율(%), AA4: 점수 포함)
         numeric_cols = ['총 점수', '점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
                         '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
                         '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
@@ -104,19 +104,19 @@ if uploaded_file:
             branch_color_map = None
             branch_order = None
 
-        # ------------------ 1. 사장님 보고용 시각화 (높이 및 글자 크기 확대) ------------------
+        # ------------------ 1. 사장님 보고용 시각화 ------------------
         left_col, right_col = st.columns(2)
         
-        # [왼쪽] 지사별 평균 서비스 점수
+        # [왼쪽] 지사별 평균 서비스 점수 (점수/총 점수)
         with left_col:
             st.subheader("🏢 지사별 평균 서비스 점수")
-            score_col = '점수' if '점수' in df.columns else '총 점수'
-            if '지사' in df.columns and score_col in df.columns:
-                branch_avg = df.groupby("지사", as_index=False)[score_col].mean()
+            target_score = '점수' if '점수' in df.columns else '총 점수'
+            if '지사' in df.columns and target_score in df.columns:
+                branch_avg = df.groupby("지사", as_index=False)[target_score].mean()
                 fig2 = px.bar(
                     branch_avg, 
                     x="지사", 
-                    y=score_col, 
+                    y=target_score, 
                     color="지사",
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
@@ -127,12 +127,12 @@ if uploaded_file:
                 fig2.update_layout(font=dict(size=15))
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # [오른쪽] 미입력 건수 vs 총 점수
+        # [오른쪽] 미입력 건수 vs 점수
         with right_col:
             st.subheader("💡 미입력 건수 vs 점수")
-            if '미입력' in df.columns and score_col in df.columns:
+            if '미입력' in df.columns and target_score in df.columns:
                 fig1 = px.scatter(
-                    df, x="미입력", y=score_col, 
+                    df, x="미입력", y=target_score, 
                     color="지사" if "지사" in df.columns else None,
                     color_discrete_map=branch_color_map,
                     category_orders=branch_order,
@@ -152,12 +152,8 @@ if uploaded_file:
             s_col_name = display_df.columns[18]
             display_df[s_col_name] = display_df[s_col_name].apply(format_time_duration)
 
-        # 2) % 변환 처리 (F열 입력율(%), AC열 관련 항목 포함)
+        # 2) % 변환 처리 (Z4: 서비스불만율(%) 포함)
         percent_cols = ['입력율(%)', '방문율', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
-        if len(display_df.columns) > 28:
-            ac_col_name = display_df.columns[28]
-            if ac_col_name not in percent_cols:
-                percent_cols.append(ac_col_name)
 
         for p_col in percent_cols:
             if p_col in display_df.columns:
@@ -177,7 +173,6 @@ if uploaded_file:
         with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                # 방문율 항목을 '점수' 항목으로 변경
                 unentered_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '점수', '총 점수'] if c in display_df.columns]
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[unentered_cols].head(10)
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
@@ -185,7 +180,7 @@ if uploaded_file:
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                # 방문율 항목을 '점수' 항목으로 변경
+                # Y4(불만건수), Z4(서비스불만율(%)), AA4(점수) 표 순서 적용
                 dissatisfied_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '점수', '총 점수'] if c in display_df.columns]
                 top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[dissatisfied_cols].head(10)
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True, height=430)
