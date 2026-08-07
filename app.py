@@ -212,37 +212,6 @@ if uploaded_file:
                 )
                 st.plotly_chart(fig1, use_container_width=True)
 
-        # [오른쪽] 총 점수 vs 총접수건
-        with right_col:
-            st.subheader("💡 총 점수 vs 총접수건")
-            total_cnt_col = '총접수건' if '총접수건' in df.columns else ('총접수' if '총접수' in df.columns else None)
-            
-            if total_cnt_col and '총 점수' in df.columns:
-                scatter_df = df.dropna(subset=[total_cnt_col, '총 점수'])
-                fig1 = px.scatter(
-                    scatter_df, x=total_cnt_col, y="총 점수", 
-                    color="지사" if "지사" in scatter_df.columns else None,
-                    color_discrete_map=branch_color_map,
-                    category_orders=branch_order,
-                    hover_name="방문 대리점" if "방문 대리점" in scatter_df.columns else None,
-                    title="총접수건 대비 총 점수 분포",
-                    height=550
-                )
-                
-                # 점 크기 유지 (50% 확대 상태)
-                fig1.update_traces(marker=dict(size=10))
-                
-                # 텍스트 크기 일괄 +4px 조정
-                fig1.update_layout(
-                    font=dict(size=21),              # 기존 17px -> 21px (+4px)
-                    xaxis=dict(tickfont=dict(size=20)), # 기존 16px -> 20px (+4px)
-                    yaxis=dict(tickfont=dict(size=20)), # 기존 16px -> 20px (+4px)
-                    legend=dict(
-                        font=dict(size=24),        # 기존 20px -> 24px (+4px)
-                        title=dict(font=dict(size=24))
-                    )
-                )
-                st.plotly_chart(fig1, use_container_width=True)
 
         # ------------------ 2. 표 서식 적용 ------------------
         display_df = df.copy()
