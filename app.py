@@ -7,29 +7,29 @@ st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout=
 # ------------------ 전체 폰트 및 요소 20% 확대 CSS 스타일 적용 ------------------
 st.markdown("""
     <style>
-        /* 전체 기본 폰트 크기 확대 */ 기존 19PX
+        /* 전체 기본 폰트 크기 확대 (기존 대비 약 20% 확대) */
         html, body, [class*="css"]  {
-            font-size: 25px !important;
+            font-size: 19px !important;
         }
         
-        /* 제목 및 주요 헤더 폰트 크기 확대 */ 2.3, 1.8, 1.5rem
-        h1 { font-size: 2.8rem !important; }
-        h2 { font-size: 2.3rem !important; }
-        h3 { font-size: 2.0rem !important; }
+        /* 제목 및 주요 헤더 폰트 크기 확대 */
+        h1 { font-size: 2.3rem !important; }
+        h2 { font-size: 1.8rem !important; }
+        h3 { font-size: 1.5rem !important; }
         
-        /* 표(Dataframe) 내부 글자 크기 확대 */ 16px
+        /* 표(Dataframe) 내부 글자 크기 확대 */
         .stDataFrame {
-            font-size: 21px !important;
+            font-size: 16px !important;
         }
         
-        /* 드롭다운/선택 상자 폰트 확대 */ 18px
+        /* 드롭다운/선택 상자 폰트 확대 */
         div[data-baseweb="select"] {
-            font-size: 23px !important;
+            font-size: 18px !important;
         }
 
-        /* 입력 폼 / 업로더 글자 확대 */ 18px
+        /* 입력 폼 / 업로더 글자 확대 */
         .stFileUploader label {
-            font-size: 23px !important;
+            font-size: 18px !important;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -169,19 +169,12 @@ if uploaded_file:
         st.markdown("---")
         col_a, col_b = st.columns(2)
         
-       with col_a:
+        with col_a:
             st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                # 엑셀 M열(13번째 열, index 12)의 데이터를 '점수' 컬럼으로 추가
-                if len(display_df.columns) > 12:
-                    m_col_name = display_df.columns[12]
-                    display_df['점수'] = display_df[m_col_name]
-                
-                # '총 점수' 대신 '점수'로 변경
                 top_unentered = display_df.sort_values(by='미입력', ascending=False)[
-                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '점수'] if c in display_df.columns]
+                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
                 ].head(10)
-                
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True, height=430)
                 
         with col_b:
@@ -201,7 +194,7 @@ if uploaded_file:
 
         # [왼쪽] 선택 지사의 미입력 대리점 전체 목록
         with col_select_a:
-            selected_branch_unentered = st.selectbox("미입력 대리점 조회 (지사 선택)", branch_list, key="select_unentered")
+            selected_branch_unentered = st.selectbox("지사 선택 (미입력 대리점 조회)", branch_list, key="select_unentered")
             filtered_unentered = display_df if selected_branch_unentered == "전체" else display_df[display_df['지사'] == selected_branch_unentered]
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
@@ -211,7 +204,7 @@ if uploaded_file:
 
         # [오른쪽] 선택 지사의 서비스 불만율 대리점 전체 목록
         with col_select_b:
-            selected_branch_dissatisfied = st.selectbox("서비스 불만율 대리점 조회 (지사 선택)", branch_list, key="select_dissatisfied")
+            selected_branch_dissatisfied = st.selectbox("지사 선택 (서비스 불만율 대리점 조회)", branch_list, key="select_dissatisfied")
             filtered_dissatisfied = display_df if selected_branch_dissatisfied == "전체" else display_df[display_df['지사'] == selected_branch_dissatisfied]
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
