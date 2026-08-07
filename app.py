@@ -16,10 +16,10 @@ if uploaded_file:
         # 열 이름 공백 및 줄바꿈 정리
         df.columns = df.columns.astype(str).str.replace('\n', '').str.strip()
         
-        # 주요 수치 데이터 숫자로 강제 변환 (에러값/문자 자동 제외)
+        # 주요 수치 데이터 숫자로 강제 변환
         numeric_cols = ['총 점수', '총접수건', '미방문', '미입력', '방문', '입력건', 
                         '입력율(%)', '1시간이내예약건', '예약율(%)', '재방문건수', 
-                        '재방문율(%)', '불만건수', '서비스불만율(%)']
+                        '재방문율(%)', '불만건수', '서비스불만율(%)', '방문율']
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
@@ -34,14 +34,13 @@ if uploaded_file:
             col2.metric("총 미입력 건수", f"{int(df['미입력'].sum()):,}건")
             
         if '입력율(%)' in df.columns and not df['입력율(%)'].dropna().empty:
-            # 1.0(100%) 및 100 두 가지 백분율 표기 방식 모두 대응
             input_full_ratio = (df['입력율(%)'].apply(lambda x: x*100 if x <= 1 else x) >= 100).mean() * 100
             col3.metric("입력률 100% 대리점 비중", f"{input_full_ratio:.1f}%")
             
-        if '서비스불만율(%)' in df.columns and not df['서비스불만율(%)'].dropna().empty:
-            avg_dissatisfaction = df['서비스불만율(%)'].mean()
-            dis_val = avg_dissatisfaction * 100 if avg_dissatisfaction <= 1 else avg_dissatisfaction
-            col4.metric("평균 서비스 불만율", f"{dis_val:.2f}%")
+        if '방문율' in df.columns and not df['방문율'].dropna().empty:
+            avg_visit = df['방문율'].mean()
+            visit_val = avg_visit * 100 if avg_visit <= 1 else avg_visit
+            col4.metric("평균 방문율 (AI열)", f"{visit_val:.1f}%")
         
         st.markdown("---")
         
@@ -67,34 +66,45 @@ if uploaded_file:
                 fig2 = px.bar(branch_avg, x="지사", y="총 점수", color="총 점수", text_auto='.1f')
                 st.plotly_chart(fig2, use_container_width=True)
 
-        # ------------------ 3. 집중 관리 대상 모니터링 ------------------
+        # ------------------ 3. 표 출력을 위한 데이터 % 포맷팅 ------------------
+        display_df = df.copy()
+        
+        # AI열(방문율) 및 백분율 컬럼 % 변환 처리 (소수점 0.77 -> 77.0% / 77 -> 77.0%)
+        percent_cols = ['방문율', '입력율(%)', '예약율(%)', '재방문율(%)', '서비스불만율(%)']
+        for p_col in percent_cols:
+            if p_col in display_df.columns:
+                display_df[p_col] = display_df[p_col].apply(
+                    lambda x: f"{x*100:.1f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.1f}%" if pd.notnull(x) else "")
+                )
+
+        # ------------------ 4. 집중 관리 대상 모니터링 ------------------
         col_a, col_b = st.columns(2)
         
         with col_a:
-            st.subheader("📉 미입력 건수 상위 대리점 (입력 독려 필요)")
+            st.subheader("📉 미입력 건수 상위 대리점")
             if '방문 대리점' in df.columns and '미입력' in df.columns:
-                top_unentered = df.sort_values(by='미입력', ascending=False)[
-                    ['지사', '방문 대리점', '총접수건', '미입력', '총 점수']
+                top_unentered = display_df.sort_values(by='미입력', ascending=False)[
+                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
                 ].head(10)
                 st.dataframe(top_unentered, use_container_width=True, hide_index=True)
                 
         with col_b:
             st.subheader("⚠️ 서비스 불만율 상위 대리점")
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
-                top_dissatisfied = df.sort_values(by='서비스불만율(%)', ascending=False)[
-                    ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '총 점수']
+                top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[
+                    [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
                 ].head(10)
                 st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True)
 
-        # ------------------ 4. 전체 대리점 상세 조회 ------------------
+        # ------------------ 5. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
-        if '지사' in df.columns:
-            selected_branch = st.selectbox("지사를 선택하세요", ["전체"] + list(df["지사"].dropna().unique()))
-            filtered_df = df if selected_branch == "전체" else df[df["지사"] == selected_branch]
+        if '지사' in display_df.columns:
+            selected_branch = st.selectbox("지사를 선택하세요", ["전체"] + list(display_df["지사"].dropna().unique()))
+            filtered_df = display_df if selected_branch == "전체" else display_df[display_df["지사"] == selected_branch]
             st.dataframe(filtered_df, use_container_width=True)
         else:
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(display_df, use_container_width=True)
 
     except ValueError:
         st.error("⚠️ 업로드한 엑셀 파일 안에 '[평가]' 라는 이름의 시트(Sheet)가 존재하지 않습니다.")
