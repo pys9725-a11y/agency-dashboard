@@ -8,34 +8,52 @@ st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout=
 # ------------------ 전체 폰트 및 요소 확대 CSS 스타일 적용 ------------------
 st.markdown("""
     <style>
-        /* 전체 기본 폰트 크기 확대 */
+        /* 1. 전체 기본 폰트 크기 확대 (기존 ~16px -> 24px) */
         html, body, [class*="css"] {
+            font-size: 24px !important;
+        }
+        
+        /* 2. 제목 및 헤더 폰트 크기 대폭 확대 */
+        h1 { font-size: 3.2rem !important; } /* 메인 타이틀 */
+        h2 { font-size: 2.6rem !important; } /* 섹션 타이틀 */
+        h3 { font-size: 2.2rem !important; } /* 서브 타이틀 */
+        
+        /* 3. 표(Dataframe) 내부 글자 크기 및 행 높이 확대 */
+        .stDataFrame {
+            font-size: 22px !important;
+        }
+        .stDataFrame div[role="gridcell"] {
+            font-size: 22px !important;
+        }
+        
+        /* 4. 드롭다운(Selectbox) 및 입력창 폰트 확대 */
+        div[data-baseweb="select"] {
+            font-size: 22px !important;
+        }
+        div[data-baseweb="select"] * {
+            font-size: 22px !important;
+        }
+
+        /* 5. 파일 업로더 글자 및 아이콘 크기 확대 */
+        .stFileUploader label {
+            font-size: 24px !important;
+        }
+        .stFileUploader section {
+            padding: 2rem !important;
+        }
+
+        /* 6. 탭(Tab) 버튼 폰트 및 여백 확대 */
+        button[data-baseweb="tab"] {
+            font-size: 23px !important;
+            padding: 12px 24px !important;
+        }
+        button[data-baseweb="tab"] div {
             font-size: 23px !important;
         }
-        
-        /* 제목 및 주요 헤더 폰트 크기 확대 */
-        h1 { font-size: 2.3rem !important; }
-        h2 { font-size: 2.0rem !important; }
-        h3 { font-size: 1.7rem !important; }
-        
-        /* 표(Dataframe) 내부 글자 크기 확대 */
-        .stDataFrame {
-            font-size: 19px !important;
-        }
-        
-        /* 드롭다운/선택 상자 폰트 확대 */
-        div[data-baseweb="select"] {
-            font-size: 19px !important;
-        }
 
-        /* 입력 폼 / 업로더 글자 확대 */
-        .stFileUploader label {
-            font-size: 21px !important;
-        }
-
-        /* 탭(Tab) 폰트 크기 확대 */
-        button[data-baseweb="tab"] {
-            font-size: 20px !important;
+        /* 7. 차트 범례 및 툴팁 텍스트 보완 */
+        .js-plotly-plot .plotly .gtitle {
+            font-size: 22px !important;
         }
     </style>
 """, unsafe_allow_html=True)
