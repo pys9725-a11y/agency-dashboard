@@ -81,45 +81,54 @@ if uploaded_file:
                     lambda x: f"{x*100:.1f}%" if pd.notnull(x) and x <= 1.0 else (f"{x:.1f}%" if pd.notnull(x) else "")
                 )
 
-        # ------------------ 3. 지사 선택별 주요 지표 모니터링 ------------------
+        # ------------------ 3. 집중 관리 대상 모니터링 (상위 10개) ------------------
         st.markdown("---")
         col_a, col_b = st.columns(2)
         
+        with col_a:
+            st.subheader("📉 미입력 건수 상위 대리점 (TOP 10)")
+            if '방문 대리점' in df.columns and '미입력' in df.columns:
+                top_unentered = display_df.sort_values(by='미입력', ascending=False)[
+                    [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
+                ].head(10)
+                st.dataframe(top_unentered, use_container_width=True, hide_index=True)
+                
+        with col_b:
+            st.subheader("⚠️ 서비스 불만율 상위 대리점 (TOP 10)")
+            if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
+                top_dissatisfied = display_df.sort_values(by='서비스불만율(%)', ascending=False)[
+                    [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
+                ].head(10)
+                st.dataframe(top_dissatisfied, use_container_width=True, hide_index=True)
+
+        # ------------------ 4. 지사별 대리점 상세 조회 ------------------
+        st.markdown("---")
+        st.subheader("🏢 지사별 대리점 상세 현황 조회")
+        
+        col_select_a, col_select_b = st.columns(2)
         branch_list = ["전체"] + list(df['지사'].dropna().unique()) if '지사' in df.columns else ["전체"]
 
-        # [왼쪽] 미입력 건수 모니터링
-        with col_a:
-            st.subheader("📉 지사별 미입력 현황")
-            selected_branch_unentered = st.selectbox("지사를 선택하세요 (미입력)", branch_list, key="select_unentered")
-            
-            # 지사 선택 조건 적용
-            if selected_branch_unentered == "전체":
-                filtered_unentered = display_df
-            else:
-                filtered_unentered = display_df[display_df['지사'] == selected_branch_unentered]
+        # [왼쪽] 선택 지사의 미입력 대리점 전체 목록
+        with col_select_a:
+            selected_branch_unentered = st.selectbox("지사 선택 (미입력 대리점 조회)", branch_list, key="select_unentered")
+            filtered_unentered = display_df if selected_branch_unentered == "전체" else display_df[display_df['지사'] == selected_branch_unentered]
             
             if '방문 대리점' in df.columns and '미입력' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '총접수건', '미입력', '방문율', '총 점수'] if c in display_df.columns]
                 unentered_result = filtered_unentered.sort_values(by='미입력', ascending=False)[target_cols]
                 st.dataframe(unentered_result, use_container_width=True, hide_index=True)
 
-        # [오른쪽] 서비스 불만율 모니터링
-        with col_b:
-            st.subheader("⚠️ 지사별 서비스 불만율 현황")
-            selected_branch_dissatisfied = st.selectbox("지사를 선택하세요 (불만율)", branch_list, key="select_dissatisfied")
-            
-            # 지사 선택 조건 적용
-            if selected_branch_dissatisfied == "전체":
-                filtered_dissatisfied = display_df
-            else:
-                filtered_dissatisfied = display_df[display_df['지사'] == selected_branch_dissatisfied]
+        # [오른쪽] 선택 지사의 서비스 불만율 대리점 전체 목록
+        with col_select_b:
+            selected_branch_dissatisfied = st.selectbox("지사 선택 (서비스 불만율 대리점 조회)", branch_list, key="select_dissatisfied")
+            filtered_dissatisfied = display_df if selected_branch_dissatisfied == "전체" else display_df[display_df['지사'] == selected_branch_dissatisfied]
                 
             if '방문 대리점' in df.columns and '서비스불만율(%)' in df.columns:
                 target_cols = [c for c in ['지사', '방문 대리점', '불만건수', '서비스불만율(%)', '방문율', '총 점수'] if c in display_df.columns]
                 dissatisfied_result = filtered_dissatisfied.sort_values(by='서비스불만율(%)', ascending=False)[target_cols]
                 st.dataframe(dissatisfied_result, use_container_width=True, hide_index=True)
 
-        # ------------------ 4. 전체 대리점 상세 조회 ------------------
+        # ------------------ 5. 전체 대리점 상세 조회 ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         if '지사' in display_df.columns:
