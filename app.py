@@ -71,7 +71,7 @@ st.markdown("""
             margin-bottom: 8px;
         }
         div[data-testid="stMetricValue"] {
-            font-size: 22px !important; /* 긴 텍스트 수용을 위해 글자 크기 조절 */
+            font-size: 22px !important;
             font-weight: 800 !important;
             color: #1e293b !important;
         }
@@ -229,7 +229,7 @@ if uploaded_file:
         with filter_col2:
             selected_agency = st.selectbox("🏢 조회할 대리점 선택", filtered_agencies, key="main_agency")
 
-        # ------------------ [신규] 지사별 대리점 개수 표출 배너 ------------------
+        # ------------------ 지사별 대리점 개수 표출 배너 ------------------
         if '지사' in df.columns and '방문 대리점' in df.columns:
             branch_counts = df.groupby('지사')['방문 대리점'].nunique()
             counts_text = " &nbsp;|&nbsp; ".join([f"<b>{b}</b>: {c}개소" for b, c in branch_counts.items()])
@@ -265,14 +265,12 @@ if uploaded_file:
         else:
             best_branch, best_score, worst_branch, worst_score = "N/A", 0, "N/A", 0
 
-        # 지사 점수 대비 전체 평균과의 차이 계산
         best_diff = best_score - avg_score
         worst_diff = worst_score - avg_score
 
         best_str = f"{best_branch} {best_score:.2f}점 (평균대비 {best_diff:+.2f}점)" if best_score else "N/A"
         worst_str = f"{worst_branch} {worst_score:.2f}점 (평균대비 {worst_diff:+.2f}점)" if worst_score else "N/A"
 
-        # 카드 하단 delta(초록색 태그) 제거 및 텍스트 통합 표시
         kpi1.metric("총 대리점 수", f"{total_agencies:,} 개소")
         kpi2.metric("전체 평균 점수", f"{avg_score:.2f} 점" if pd.notnull(avg_score) else "N/A")
         kpi3.metric("최고 점수 지사", best_str)
@@ -339,8 +337,9 @@ if uploaded_file:
         st.markdown("---")
         st.subheader("📋 7개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
+        # '1. 조치정보입력율'의 강조 기준 컬럼을 '조치입력 점수'로 변경
         indicators_info = [
-            ("1. 조치정보입력율", '입력율(%)', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
+            ("1. 조치정보입력율", '조치입력 점수', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
             ("2. 약속시간입력율", '예약 점수', ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
             ("3. 평균처리시간", '처리시간 점수', ['지사', '방문 대리점', '총접수건', s_col_name, '처리시간 점수', '총 점수'] if s_col_name else ['지사', '방문 대리점', '처리시간 점수', '총 점수']),
             ("4. 재방문율", '재방문 점수', ['지사', '방문 대리점', '총접수건', '재방문건수', '재방문율(%)', '재방문 점수', '총 점수']),
