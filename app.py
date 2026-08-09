@@ -475,7 +475,7 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # 3. 만점 대비 세부 항목 달성 현황 차트 (이미지 2 스타일)
+                # 3. 만점 대비 세부 항목 달성 현황 차트 (범례 및 평균 제거)
                 st.markdown("### 📊 만점 대비 세부 항목 달성 현황")
                 
                 # 지표별 만점 정의
@@ -489,7 +489,7 @@ if uploaded_file:
                     '고객만족도': 5
                 }
 
-                # 이미지 2 스타일의 지표별 고유 컬러 패시브 (진한색: 획득 점수 / 연한색: 미획득 배경)
+                # 이미지 2 스타일 지표별 고유 컬러 (진한색: 획득 점수 / 연한색: 미획득 배경)
                 metrics_color_config = [
                     {'main': '#8B5CF6', 'bg': '#DDD6FE'}, # 보라
                     {'main': '#F59E0B', 'bg': '#FDE68A'}, # 주황/노랑
@@ -518,10 +518,6 @@ if uploaded_file:
                     remaining_pct_list = [] # 잔여 비율 (%)
                     text_labels = []        # 하단 획득점수 텍스트
                     top_labels = []         # 상단 만점 텍스트
-                    
-                    # 평균 달성률 비교용
-                    total_avg_pct = []
-                    branch_avg_pct = []
 
                     for idx, c in enumerate(actual_cols):
                         name = x_labels[idx]
@@ -536,12 +532,6 @@ if uploaded_file:
                         text_labels.append(f"<b>{val:.2f}점</b><br>({pct:.1f}%)")
                         top_labels.append(f"만점 {max_s}점")
 
-                        # 평균값 비율 계산
-                        t_avg = df[c].mean() if c in df.columns else 0
-                        b_avg = branch_agencies[c].mean() if c in branch_agencies.columns else 0
-                        total_avg_pct.append((t_avg / max_s) * 100 if max_s > 0 else 0)
-                        branch_avg_pct.append((b_avg / max_s) * 100 if max_s > 0 else 0)
-
                     main_colors = [metrics_color_config[i % len(metrics_color_config)]['main'] for i in range(len(x_labels))]
                     bg_colors = [metrics_color_config[i % len(metrics_color_config)]['bg'] for i in range(len(x_labels))]
 
@@ -551,7 +541,7 @@ if uploaded_file:
                     fig_comp.add_trace(go.Bar(
                         x=x_labels,
                         y=achieved_pct_list,
-                        name="획득 비율 (%)",
+                        name="획득 비율",
                         marker_color=main_colors,
                         text=text_labels,
                         textposition='inside',
@@ -563,40 +553,22 @@ if uploaded_file:
                     fig_comp.add_trace(go.Bar(
                         x=x_labels,
                         y=remaining_pct_list,
-                        name="미획득 비율 (%)",
+                        name="미획득 비율",
                         marker_color=bg_colors,
                         text=top_labels,
                         textposition='outside',
                         textfont=dict(size=15, color='#475569', weight='bold')
                     ))
 
-                    # 3. 전체 평균 기준선 표시 (검은색 대시선 마커)
-                    fig_comp.add_trace(go.Scatter(
-                        x=x_labels,
-                        y=total_avg_pct,
-                        mode='markers',
-                        name='전체 평균 달성률',
-                        marker=dict(symbol='line-ew-open', size=32, line=dict(width=3.5, color='#1E293B'))
-                    ))
-
-                    # 4. 지사 평균 기준선 표시 (빨간색 대시선 마커)
-                    fig_comp.add_trace(go.Scatter(
-                        x=x_labels,
-                        y=branch_avg_pct,
-                        mode='markers',
-                        name=f'{agency_branch} 평균 달성률',
-                        marker=dict(symbol='line-ew-open', size=32, line=dict(width=3.5, color='#DC2626'))
-                    ))
-
                     fig_comp.update_layout(
-                        barmode='stack', # 이미지 2 스타일의 누적 채우기
-                        showlegend=True,
+                        barmode='stack',
+                        showlegend=False,  # 상단 범례 숨김 처리
                         title=dict(
-                            text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 비교</b>",
+                            text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
                             font=dict(size=24, color='#1E293B')
                         ),
-                        height=600,
-                        margin=dict(l=20, r=20, t=70, b=40),
+                        height=550,
+                        margin=dict(l=20, r=20, t=50, b=40),
                         plot_bgcolor='white',
                         paper_bgcolor='white',
                         font=dict(size=18, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
@@ -609,20 +581,11 @@ if uploaded_file:
                             title_font=dict(size=18, color='#334155'),
                             tickfont=dict(size=16, color='#64748B'),
                             gridcolor='#F1F5F9',
-                            range=[0, 115] # 상단 텍스트 여유공간
-                        ),
-                        legend=dict(
-                            orientation="h",
-                            yanchor="bottom",
-                            y=1.02,
-                            xanchor="right",
-                            x=1,
-                            font=dict(size=16),
-                            bgcolor='rgba(255,255,255,0.8)'
+                            range=[0, 115]
                         )
                     )
                     st.plotly_chart(fig_comp, use_container_width=True)
-
+                    
         # ------------------ 전체 대리점 목록 조회 표 (조건부 서식) ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
