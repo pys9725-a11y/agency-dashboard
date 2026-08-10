@@ -618,8 +618,8 @@ if uploaded_file:
                         ),
                         yaxis=dict(
                             title="만점 대비 달성률 (%)",
-                            title_font=dict(size=22, color='#334155'),
-                            tickfont=dict(size=20, color='#64748B'),
+                            title_font=dict(size=26, color='#334155'),
+                            tickfont=dict(size=24, color='#64748B'),
                             gridcolor='#F1F5F9',
                             range=[0, 115]
                         )
