@@ -8,10 +8,11 @@ import streamlit as st
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
 # ------------------ CSS 스타일링 (초대형 폰트 스타일링: 화면 비율 33% 대응) ------------------
+# ------------------ CSS 스타일링 (33% 배율 전용 초강력 스케일업) ------------------
 st.markdown(
     """
     <style>
-        /* 1. 우측 상단 툴바, 헤더, 푸터 및 Manage App 버튼 숨기기 */
+        /* 1. 우측 상단 툴바, 헤더, 푸터 숨기기 */
         header[data-testid="stHeader"] {
             visibility: hidden;
             height: 0rem;
@@ -25,93 +26,30 @@ st.markdown(
             display: none !important;
         }
 
-        /* 2. 전체 기본 폰트 크기 대폭 확대 (28px -> 52px) */
-        html, body, [class*="css"] {
-            font-size: 52px !important;
+        /* 2. 대시보드 전체 줌 스케일업 (33% 축소 화면 대응) */
+        .stApp {
+            zoom: 2.6; /* 글자가 여전히 작다면 이 숫자를 3.0 ~ 3.5 로 올려주세요! */
+            -moz-transform: scale(2.6); /* 파이어폭스 호환용 */
+            -moz-transform-origin: 0 0;
         }
-        
-        /* 3. 제목 및 헤더 폰트 크기 확대 */
-        h1 { font-size: 5.5rem !important; }
-        h2 { font-size: 5.0rem !important; }
-        h3 { font-size: 4.2rem !important; }
-        h4 { font-size: 3.5rem !important; }
-        
-        /* 4. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
-        .stDataFrame, .stDataFrame div[role="gridcell"] {
-            font-size: 46px !important;
-            line-height: 1.4 !important;
-        }
-        .stDataFrame th {
-            text-align: center !important;
-            font-size: 48px !important;
-            padding: 16px !important;
-        }
-        
-        /* 5. 드롭다운 및 라디오 버튼 글자 크기 */
-        div[data-baseweb="select"] * {
-            font-size: 44px !important;
-        }
-        div[data-widget="selectbox"] label, .stSelectbox label {
-            font-size: 44px !important;
+
+        /* 3. 표(Dataframe) 헤더 및 셀 텍스트 강제 강조 */
+        .stDataFrame div[role="gridcell"], .stDataFrame th {
             font-weight: bold !important;
         }
 
-        /* 6. 파일 업로더 글자 크기 */
-        .stFileUploader label {
-            font-size: 52px !important;
-        }
-        .stFileUploader section {
-            padding: 3rem !important;
-        }
-
-        /* 7. 탭(Tab) 버튼 폰트 및 여백 */
-        button[data-baseweb="tab"] {
-            font-size: 44px !important;
-            padding: 16px 32px !important;
-        }
-        button[data-baseweb="tab"] div {
-            font-size: 44px !important;
-        }
-
-        /* 8. KPI 및 메트릭 카드 입체 스타일링 및 폰트 확대 */
+        /* 4. metric 카드 입체감 유지 */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 30px 36px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        div[data-testid="stMetric"]:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
-            border-color: #cbd5e1;
-        }
-        div[data-testid="stMetricLabel"] {
-            font-size: 44px !important;
-            font-weight: 700 !important;
-            color: #475569 !important;
-            margin-bottom: 12px;
-        }
-        div[data-testid="stMetricValue"] {
-            font-size: 52px !important;
-            font-weight: 800 !important;
-            color: #1e293b !important;
-        }
-        div[data-testid="stMetricDelta"] {
-            font-size: 38px !important;
+            border: 2px solid #cbd5e1;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
         }
     </style>
 """,
     unsafe_allow_html=True,
 )
-
-
-# ------------------ 유틸리티 함수 ------------------
-def parse_time_to_seconds(val):
-    if pd.isna(val) or val == "" or str(val).strip() == "":
-        return None
-    try:
         if isinstance(val, (time, datetime)):
             return val.hour * 3600 + val.minute * 60 + val.second
         elif isinstance(val, pd.Timedelta):
