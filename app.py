@@ -50,7 +50,7 @@ st.markdown("""
             font-size: 22px !important;
         }
 
-        /* 7. KPI 및 메트릭 카드 입체 스타일링 */
+        /* 7. KPI 및 메트릭 카드 입체 스타일링 (각 4px 확대) */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             border: 1px solid #e2e8f0;
@@ -65,13 +65,13 @@ st.markdown("""
             border-color: #cbd5e1;
         }
         div[data-testid="stMetricLabel"] {
-            font-size: 20px !important;
+            font-size: 24px !important; /* 20px -> 24px */
             font-weight: 700 !important;
             color: #475569 !important;
             margin-bottom: 8px;
         }
         div[data-testid="stMetricValue"] {
-            font-size: 22px !important;
+            font-size: 26px !important; /* 22px -> 26px */
             font-weight: 800 !important;
             color: #1e293b !important;
         }
@@ -337,7 +337,6 @@ if uploaded_file:
         st.markdown("---")
         st.subheader("📋 7개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
         
-        # '1. 조치정보입력율'의 강조 기준 컬럼을 '조치입력 점수'로 변경
         indicators_info = [
             ("1. 조치정보입력율", '조치입력 점수', ['지사', '방문 대리점', '총접수건', '미입력', '입력율(%)', '조치입력 점수', '총 점수']),
             ("2. 약속시간입력율", '예약 점수', ['지사', '방문 대리점', '총접수건', '1시간이내예약건', '예약율(%)', '예약 점수', '총 점수']),
@@ -475,10 +474,9 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # 3. 만점 대비 세부 항목 달성 현황 차트 (범례 및 평균 제거)
+                # 3. 만점 대비 세부 항목 달성 현황 차트
                 st.markdown("### 📊 만점 대비 세부 항목 달성 현황")
                 
-                # 지표별 만점 정의
                 max_score_dict = {
                     '조치정보입력율': 15,
                     '약속시간입력율': 25,
@@ -489,7 +487,6 @@ if uploaded_file:
                     '고객만족도': 5
                 }
 
-                # 이미지 2 스타일 지표별 고유 컬러 (진한색: 획득 점수 / 연한색: 미획득 배경)
                 metrics_color_config = [
                     {'main': '#8B5CF6', 'bg': '#DDD6FE'}, # 보라
                     {'main': '#F59E0B', 'bg': '#FDE68A'}, # 주황/노랑
@@ -514,16 +511,15 @@ if uploaded_file:
                 actual_cols = [score_cols[i] for i in available_indices]
 
                 if actual_cols:
-                    achieved_pct_list = []  # 달성률 (%)
-                    remaining_pct_list = [] # 잔여 비율 (%)
-                    text_labels = []        # 하단 획득점수 텍스트
-                    top_labels = []         # 상단 만점 텍스트
+                    achieved_pct_list = []  
+                    remaining_pct_list = [] 
+                    text_labels = []        
+                    top_labels = []         
 
                     for idx, c in enumerate(actual_cols):
                         name = x_labels[idx]
                         max_s = max_score_dict.get(name, 15)
                         
-                        # 획득 점수 및 비율 계산
                         val = float(agency_data.get(c, 0)) if pd.notnull(agency_data.get(c, 0)) else 0.0
                         pct = (val / max_s) * 100 if max_s > 0 else 0
                         
@@ -546,7 +542,7 @@ if uploaded_file:
                         text=text_labels,
                         textposition='inside',
                         insidetextanchor='middle',
-                        textfont=dict(size=16, color='white', family="Arial Black")
+                        textfont=dict(size=20, color='white', family="Arial Black") # 16px -> 20px
                     ))
 
                     # 2. 상단 연한 바 (잔여 만점 공간 채움)
@@ -557,29 +553,29 @@ if uploaded_file:
                         marker_color=bg_colors,
                         text=top_labels,
                         textposition='outside',
-                        textfont=dict(size=15, color='#475569', weight='bold')
+                        textfont=dict(size=19, color='#475569', weight='bold') # 15px -> 19px
                     ))
 
                     fig_comp.update_layout(
                         barmode='stack',
-                        showlegend=False,  # 상단 범례 숨김 처리
+                        showlegend=False,
                         title=dict(
                             text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
-                            font=dict(size=24, color='#1E293B')
+                            font=dict(size=28, color='#1E293B') # 24px -> 28px
                         ),
                         height=550,
                         margin=dict(l=20, r=20, t=50, b=40),
                         plot_bgcolor='white',
                         paper_bgcolor='white',
-                        font=dict(size=18, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
+                        font=dict(size=22, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"), # 18px -> 22px
                         xaxis=dict(
-                            tickfont=dict(size=18, color='#334155', weight='bold'),
+                            tickfont=dict(size=22, color='#334155', weight='bold'), # 18px -> 22px
                             showgrid=False
                         ),
                         yaxis=dict(
                             title="만점 대비 달성률 (%)",
-                            title_font=dict(size=18, color='#334155'),
-                            tickfont=dict(size=16, color='#64748B'),
+                            title_font=dict(size=22, color='#334155'), # 18px -> 22px
+                            tickfont=dict(size=20, color='#64748B'), # 16px -> 20px
                             gridcolor='#F1F5F9',
                             range=[0, 115]
                         )
