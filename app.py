@@ -7,49 +7,46 @@ import streamlit as st
 # ------------------ 기본 페이지 설정 ------------------
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ CSS 스타일링 (초대형 폰트 스타일링: 화면 비율 33% 대응) ------------------
-# ------------------ CSS 스타일링 (33% 배율 전용 초강력 스케일업) ------------------
+# ------------------ CSS 스타일링 (33% 배율 전용) ------------------
 st.markdown(
     """
     <style>
-        /* 1. 우측 상단 툴바, 헤더, 푸터 숨기기 */
-        header[data-testid="stHeader"] {
-            visibility: hidden;
-            height: 0rem;
+        header[data-testid="stHeader"] { visibility: hidden; height: 0rem; }
+        footer { visibility: hidden; }
+        [data-testid="manage-app-button"], .stAppViewerBadge, div[class*="viewerBadge"] { display: none !important; }
+
+        /* 전체 기본 폰트 및 Selectbox, Tab 강제 확대 */
+        html, body, [class*="css"], .stSelectbox label, .stSelectbox div {
+            font-size: 36px !important;
         }
-        footer {
-            visibility: hidden;
-        }
-        [data-testid="manage-app-button"],
-        .stAppViewerBadge,
-        div[class*="viewerBadge"] {
-            display: none !important;
+        
+        /* Selectbox 내부 텍스트 크기 */
+        div[data-baseweb="select"] * {
+            font-size: 32px !important;
         }
 
-        /* 2. 대시보드 전체 줌 스케일업 (33% 축소 화면 대응) */
-        .stApp {
-            zoom: 2.6; /* 글자가 여전히 작다면 이 숫자를 3.0 ~ 3.5 로 올려주세요! */
-            -moz-transform: scale(2.6); /* 파이어폭스 호환용 */
-            -moz-transform-origin: 0 0;
-        }
-
-        /* 3. 표(Dataframe) 헤더 및 셀 텍스트 강제 강조 */
-        .stDataFrame div[role="gridcell"], .stDataFrame th {
+        /* 탭 버튼 폰트 크기 */
+        button[data-baseweb="tab"] div {
+            font-size: 32px !important;
             font-weight: bold !important;
         }
 
-        /* 4. metric 카드 입체감 유지 */
-        div[data-testid="stMetric"] {
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border: 2px solid #cbd5e1;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        /* 표(Dataframe) 내부 글자 및 헤더 강제 크기 확대 */
+        .stDataFrame [data-testid="stTable"] div, .stDataFrame div[role="gridcell"], .stDataFrame th {
+            font-size: 32px !important;
+            line-height: 1.5 !important;
         }
     </style>
 """,
     unsafe_allow_html=True,
 )
+
+
+# ------------------ 유틸리티 함수 ------------------
+def parse_time_to_seconds(val):
+    if pd.isna(val) or val == "" or str(val).strip() == "":
+        return None
+    try:
         if isinstance(val, (time, datetime)):
             return val.hour * 3600 + val.minute * 60 + val.second
         elif isinstance(val, pd.Timedelta):
@@ -265,7 +262,10 @@ if uploaded_file:
         title_col, filter_col1, filter_col2 = st.columns([2.2, 1, 1])
 
         with title_col:
-            st.title("📊 대리점 서비스 평가 현황")
+            st.markdown(
+                "<h1 style='font-size: 52px; font-weight: bold;'>📊 대리점 서비스 평가 현황</h1>",
+                unsafe_allow_html=True,
+            )
 
         branch_options = ["전체"] + list(unique_branches)
 
@@ -298,7 +298,7 @@ if uploaded_file:
             )
             st.markdown(
                 f"""
-                <div style='background-color: #f8fafc; border: 2px solid #e2e8f0; padding: 20px 30px; border-radius: 16px; margin-top: 10px; margin-bottom: 25px; font-size: 40px; color: #334155;'>
+                <div style='background-color: #f8fafc; border: 3px solid #cbd5e1; padding: 20px; border-radius: 16px; margin-top: 10px; margin-bottom: 25px; font-size: 36px; color: #1e293b;'>
                     🏢 <b>지사별 대리점 현황:</b> {counts_text}
                 </div>
                 """,
@@ -313,8 +313,10 @@ if uploaded_file:
         else:
             filtered_main_df = df.copy()
 
-        st.markdown("### 📌 서비스 평가 핵심 요약")
-        kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+        st.markdown(
+            "<h2 style='font-size: 44px; font-weight: bold;'>📌 서비스 평가 핵심 요약</h2>",
+            unsafe_allow_html=True,
+        )
 
         total_agencies = len(filtered_main_df)
         avg_score = (
@@ -346,30 +348,48 @@ if uploaded_file:
         best_diff = best_score - avg_score
         worst_diff = worst_score - avg_score
 
-        best_str = (
-            f"{best_branch} {best_score:.2f}점 (평균대비 {best_diff:+.2f}점)"
-            if best_score
-            else "N/A"
-        )
-        worst_str = (
-            f"{worst_branch} {worst_score:.2f}점 (평균대비 {worst_diff:+.2f}점)"
-            if worst_score
-            else "N/A"
-        )
+        # 커스텀 초대형 KPI 카드 출력 함수
+        def render_custom_kpi(label, val, sub_text=""):
+            st.markdown(
+                f"""
+            <div style="background: #ffffff; border: 3px solid #cbd5e1; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                <div style="font-size: 32px; font-weight: bold; color: #475569;">{label}</div>
+                <div style="font-size: 48px; font-weight: 800; color: #0f172a; margin-top: 5px;">{val}</div>
+                {"<div style='font-size: 26px; color: #2563eb; margin-top: 5px;'>" + sub_text + "</div>" if sub_text else ""}
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
 
-        kpi1.metric("총 대리점 수", f"{total_agencies:,} 개소")
-        kpi2.metric(
-            "전체 평균 점수",
-            f"{avg_score:.2f} 점" if pd.notnull(avg_score) else "N/A",
-        )
-        kpi3.metric("최고 점수 지사", best_str)
-        kpi4.metric("최저 점수 지사", worst_str)
+        k1, k2, k3, k4 = st.columns(4)
+        with k1:
+            render_custom_kpi("총 대리점 수", f"{total_agencies:,} 개소")
+        with k2:
+            render_custom_kpi(
+                "전체 평균 점수",
+                f"{avg_score:.2f} 점" if pd.notnull(avg_score) else "N/A",
+            )
+        with k3:
+            render_custom_kpi(
+                "최고 점수 지사",
+                f"{best_branch} {best_score:.2f}점",
+                f"평균대비 {best_diff:+.2f}점",
+            )
+        with k4:
+            render_custom_kpi(
+                "최저 점수 지사",
+                f"{worst_branch} {worst_score:.2f}점",
+                f"평균대비 {worst_diff:+.2f}점",
+            )
 
-        st.markdown("---")
+        st.markdown("<br>", unsafe_allow_html=True)
 
         left_col, right_col = st.columns(2)
         with left_col:
-            st.subheader("🏢 지사별 평균 서비스 점수")
+            st.markdown(
+                "<h3 style='font-size: 38px; font-weight: bold;'>🏢 지사별 평균 서비스 점수</h3>",
+                unsafe_allow_html=True,
+            )
             if (
                 "지사" in filtered_main_df.columns
                 and "총 점수" in filtered_main_df.columns
@@ -388,26 +408,28 @@ if uploaded_file:
                         color_discrete_map=branch_color_map,
                         category_orders=branch_order,
                         text_auto=".2f",
-                        title="지사별 서비스 평가 평균 점수 (총 점수)",
                         height=650,
                     )
+                    # 차트 내 폰트 파이썬 직접 확대
                     fig2.update_layout(
-                        font=dict(size=40),
-                        title=dict(font=dict(size=44)),
+                        font=dict(size=32),
                         xaxis=dict(
-                            tickfont=dict(size=36),
-                            title=dict(font=dict(size=38)),
-                            tickangle=0,
+                            tickfont=dict(size=32),
+                            title=dict(font=dict(size=36)),
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=36),
-                            title=dict(font=dict(size=38)),
+                            tickfont=dict(size=32),
+                            title=dict(font=dict(size=36)),
                         ),
                     )
+                    fig2.update_traces(textfont_size=32)
                     st.plotly_chart(fig2, use_container_width=True)
 
         with right_col:
-            st.subheader("💡 총 점수 vs 총접수건")
+            st.markdown(
+                "<h3 style='font-size: 38px; font-weight: bold;'>💡 총 점수 vs 총접수건</h3>",
+                unsafe_allow_html=True,
+            )
             total_cnt_col = (
                 "총접수건"
                 if "총접수건" in filtered_main_df.columns
@@ -432,23 +454,21 @@ if uploaded_file:
                             if "방문 대리점" in scatter_df.columns
                             else None
                         ),
-                        title="총접수건 대비 총 점수 분포",
                         height=650,
                     )
-                    fig1.update_traces(marker=dict(size=18))
+                    fig1.update_traces(marker=dict(size=22))
                     fig1.update_layout(
-                        font=dict(size=40),
-                        title=dict(font=dict(size=44)),
+                        font=dict(size=32),
                         xaxis=dict(
-                            tickfont=dict(size=36),
-                            title=dict(font=dict(size=38)),
+                            tickfont=dict(size=32),
+                            title=dict(font=dict(size=36)),
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=36),
-                            title=dict(font=dict(size=38)),
+                            tickfont=dict(size=32),
+                            title=dict(font=dict(size=36)),
                         ),
                         legend=dict(
-                            font=dict(size=36), title=dict(font=dict(size=38))
+                            font=dict(size=28), title=dict(font=dict(size=32))
                         ),
                     )
                     st.plotly_chart(fig1, use_container_width=True)
@@ -493,7 +513,10 @@ if uploaded_file:
 
         # ------------------ 7개 평가 지표 세부 현황 (TOP 20 & LOW 20) ------------------
         st.markdown("---")
-        st.subheader("📋 7개 평가 지표별 세부 현황 (TOP 20 & LOW 20)")
+        st.markdown(
+            "<h2 style='font-size: 44px; font-weight: bold;'>📋 7개 평가 지표별 세부 현황 (TOP 20 & LOW 20)</h2>",
+            unsafe_allow_html=True,
+        )
 
         indicators_info = [
             (
@@ -593,7 +616,10 @@ if uploaded_file:
 
             title_name1, col_key1, target_cols1 = indicators_info[i]
             with col1:
-                st.markdown(f"#### 📌 {title_name1}")
+                st.markdown(
+                    f"<h3 style='font-size: 36px; font-weight: bold;'>📌 {title_name1}</h3>",
+                    unsafe_allow_html=True,
+                )
                 sub_cols1 = [
                     c for c in target_cols1 if c in display_df.columns
                 ]
@@ -615,7 +641,7 @@ if uploaded_file:
                             styled_top1,
                             use_container_width=True,
                             hide_index=True,
-                            height=480,
+                            height=550,
                         )
                     with low_tab1:
                         idx_low1 = valid_sub_df1.sort_values(
@@ -630,17 +656,16 @@ if uploaded_file:
                             styled_low1,
                             use_container_width=True,
                             hide_index=True,
-                            height=480,
+                            height=550,
                         )
-                else:
-                    st.info(
-                        f"'{title_name1}' 관련 데이터 항목을 찾을 수 없습니다."
-                    )
 
             if i + 1 < len(indicators_info):
                 title_name2, col_key2, target_cols2 = indicators_info[i + 1]
                 with col2:
-                    st.markdown(f"#### 📌 {title_name2}")
+                    st.markdown(
+                        f"<h3 style='font-size: 36px; font-weight: bold;'>📌 {title_name2}</h3>",
+                        unsafe_allow_html=True,
+                    )
                     sub_cols2 = [
                         c for c in target_cols2 if c in display_df.columns
                     ]
@@ -665,7 +690,7 @@ if uploaded_file:
                                 styled_top2,
                                 use_container_width=True,
                                 hide_index=True,
-                                height=480,
+                                height=550,
                             )
                         with low_tab2:
                             idx_low2 = valid_sub_df2.sort_values(
@@ -681,29 +706,21 @@ if uploaded_file:
                                 styled_low2,
                                 use_container_width=True,
                                 hide_index=True,
-                                height=480,
+                                height=550,
                             )
-                    else:
-                        st.info(
-                            f"'{title_name2}' 관련 데이터 항목을 찾을 수 없습니다."
-                        )
 
             st.markdown("---")
 
         # ------------------ 대리점별 상세 리포트 영역 ------------------
-        if not selected_agency:
-            st.warning("상단 검색 창에서 대리점을 선택해 주세요.")
-        else:
+        if selected_agency:
             agency_row = df[df["방문 대리점"] == selected_agency]
-
-            if agency_row.empty:
-                st.info("선택한 대리점의 데이터가 존재하지 않습니다.")
-            else:
+            if not agency_row.empty:
                 agency_data = agency_row.iloc[0]
                 agency_branch = agency_data.get("지사", "미지정")
 
                 st.markdown(
-                    f"## 🏢 [{agency_branch}] **{selected_agency}** 평가 상세 리포트"
+                    f"<h2 style='font-size: 44px; font-weight: bold;'>🏢 [{agency_branch}] <u>{selected_agency}</u> 평가 상세 리포트</h2>",
+                    unsafe_allow_html=True,
                 )
 
                 total_agencies_count = len(df)
@@ -729,101 +746,49 @@ if uploaded_file:
                     else None
                 )
 
-                # 1. 상단 요약 카드
                 c1, c2, c3, c4 = st.columns(4)
-                c1.metric(
-                    "총 점수", f"{agency_data.get('총 점수', 0):.2f} 점"
-                )
-                c2.metric(
-                    "지사 내 순위",
-                    (
-                        f"{int(branch_rank)}위 / {branch_agencies_count}개"
-                        if pd.notnull(branch_rank)
-                        else "N/A"
-                    ),
-                )
-                c3.metric(
-                    "전체 순위",
-                    (
-                        f"{int(overall_rank)}위 / {total_agencies_count}개"
-                        if pd.notnull(overall_rank)
-                        else "N/A"
-                    ),
-                )
-
-                tot_receipt = agency_data.get(
-                    "총접수건", agency_data.get("총접수", 0)
-                )
-                c4.metric(
-                    "총 접수건수",
-                    (
-                        f"{int(tot_receipt):,} 건"
-                        if pd.notnull(tot_receipt)
-                        else "0 건"
-                    ),
-                )
+                with c1:
+                    render_custom_kpi(
+                        "총 점수", f"{agency_data.get('총 점수', 0):.2f} 점"
+                    )
+                with c2:
+                    render_custom_kpi(
+                        "지사 내 순위",
+                        (
+                            f"{int(branch_rank)}위 / {branch_agencies_count}개"
+                            if pd.notnull(branch_rank)
+                            else "N/A"
+                        ),
+                    )
+                with c3:
+                    render_custom_kpi(
+                        "전체 순위",
+                        (
+                            f"{int(overall_rank)}위 / {total_agencies_count}개"
+                            if pd.notnull(overall_rank)
+                            else "N/A"
+                        ),
+                    )
+                with c4:
+                    tot_receipt = agency_data.get(
+                        "총접수건", agency_data.get("총접수", 0)
+                    )
+                    render_custom_kpi(
+                        "총 접수건수",
+                        (
+                            f"{int(tot_receipt):,} 건"
+                            if pd.notnull(tot_receipt)
+                            else "0 건"
+                        ),
+                    )
 
                 st.markdown("---")
 
-                # 2. 7개 평가 지표 현황 카드
-                st.markdown("### 📋 7개 평가 지표별 세부 성과 현황")
-
-                metrics_config = [
-                    ("1. 조치정보입력율", "조치정보입력율 점수", 15),
-                    ("2. 약속시간입력율", "예약 점수", 25),
-                    ("3. 평균처리시간", "처리시간 점수", 15),
-                    ("4. 재방문율", "재방문 점수", 15),
-                    ("5. 서비스불만율", "불만 점수", 15),
-                    ("6. 독촉율", "독촉 점수", 10),
-                    ("7. 고객만족도", "고객만족도 점수", 5),
-                ]
-
-                col1, col2, col3, col4 = st.columns(4)
-                cols_row1 = [col1, col2, col3, col4]
-
-                for idx in range(4):
-                    label, col_name, max_score = metrics_config[idx]
-                    score = agency_data.get(col_name, 0)
-                    score_val = float(score) if pd.notnull(score) else 0.0
-                    avg_score_val = (
-                        df[col_name].mean() if col_name in df.columns else 0.0
-                    )
-                    diff = score_val - avg_score_val
-
-                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 /{max_score}점)"
-
-                    with cols_row1[idx]:
-                        st.metric(
-                            label=f"{label} ({max_score}점)",
-                            value=f"{score_val:.2f} 점",
-                            delta=delta_text,
-                        )
-
-                col5, col6, col7, _ = st.columns(4)
-                cols_row2 = [col5, col6, col7]
-
-                for idx in range(3):
-                    label, col_name, max_score = metrics_config[idx + 4]
-                    score = agency_data.get(col_name, 0)
-                    score_val = float(score) if pd.notnull(score) else 0.0
-                    avg_score_val = (
-                        df[col_name].mean() if col_name in df.columns else 0.0
-                    )
-                    diff = score_val - avg_score_val
-
-                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 /{max_score}점)"
-
-                    with cols_row2[idx]:
-                        st.metric(
-                            label=f"{label} ({max_score}점)",
-                            value=f"{score_val:.2f} 점",
-                            delta=delta_text,
-                        )
-
-                st.markdown("---")
-
-                # 3. 만점 대비 세부 항목 달성 현황 차트
-                st.markdown("### 📊 만점 대비 세부 항목 달성 현황")
+                # 만점 대비 달성률 차트
+                st.markdown(
+                    "<h3 style='font-size: 38px; font-weight: bold;'>📊 만점 대비 세부 항목 달성 현황</h3>",
+                    unsafe_allow_html=True,
+                )
 
                 max_score_dict = {
                     "조치정보입력율": 15,
@@ -834,17 +799,15 @@ if uploaded_file:
                     "독촉율": 10,
                     "고객만족도": 5,
                 }
-
                 metrics_color_config = [
-                    {"main": "#8B5CF6", "bg": "#DDD6FE"},  # 보라
-                    {"main": "#F59E0B", "bg": "#FDE68A"},  # 주황/노랑
-                    {"main": "#EF4444", "bg": "#FECACA"},  # 빨강
-                    {"main": "#10B981", "bg": "#A7F3D0"},  # 에메랄드
-                    {"main": "#3B82F6", "bg": "#BFDBFE"},  # 파랑
-                    {"main": "#6B7280", "bg": "#E5E7EB"},  # 회색
-                    {"main": "#EC4899", "bg": "#FBCFE8"},  # 핑크
+                    {"main": "#8B5CF6", "bg": "#DDD6FE"},
+                    {"main": "#F59E0B", "bg": "#FDE68A"},
+                    {"main": "#EF4444", "bg": "#FECACA"},
+                    {"main": "#10B981", "bg": "#A7F3D0"},
+                    {"main": "#3B82F6", "bg": "#BFDBFE"},
+                    {"main": "#6B7280", "bg": "#E5E7EB"},
+                    {"main": "#EC4899", "bg": "#FBCFE8"},
                 ]
-
                 score_cols = [
                     "조치정보입력율 점수",
                     "예약 점수",
@@ -879,7 +842,6 @@ if uploaded_file:
                     for idx, c in enumerate(actual_cols):
                         name = x_labels[idx]
                         max_s = max_score_dict.get(name, 15)
-
                         val = (
                             float(agency_data.get(c, 0))
                             if pd.notnull(agency_data.get(c, 0))
@@ -908,8 +870,6 @@ if uploaded_file:
                     ]
 
                     fig_comp = go.Figure()
-
-                    # 1. 하단 실색 바 (획득 점수 비율)
                     fig_comp.add_trace(
                         go.Bar(
                             x=x_labels,
@@ -920,12 +880,10 @@ if uploaded_file:
                             textposition="inside",
                             insidetextanchor="middle",
                             textfont=dict(
-                                size=36, color="white", family="Arial Black"
+                                size=32, color="white", family="Arial Black"
                             ),
                         )
                     )
-
-                    # 2. 상단 연한 바 (잔여 만점 공간 채움)
                     fig_comp.add_trace(
                         go.Bar(
                             x=x_labels,
@@ -935,7 +893,7 @@ if uploaded_file:
                             text=top_labels,
                             textposition="outside",
                             textfont=dict(
-                                size=34, color="#475569", weight="bold"
+                                size=30, color="#475569", weight="bold"
                             ),
                         )
                     )
@@ -943,41 +901,34 @@ if uploaded_file:
                     fig_comp.update_layout(
                         barmode="stack",
                         showlegend=False,
-                        title=dict(
-                            text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
-                            font=dict(size=44, color="#1E293B"),
-                        ),
                         height=680,
-                        margin=dict(l=20, r=20, t=60, b=40),
+                        margin=dict(l=20, r=20, t=40, b=40),
                         plot_bgcolor="white",
                         paper_bgcolor="white",
-                        font=dict(
-                            size=38,
-                            family="Malgun Gothic, Apple SD Gothic Neo, sans-serif",
-                        ),
+                        font=dict(size=32),
                         xaxis=dict(
                             tickfont=dict(
-                                size=38, color="#334155", weight="bold"
-                            ),
-                            showgrid=False,
+                                size=32, color="#334155", weight="bold"
+                            )
                         ),
                         yaxis=dict(
                             title="만점 대비 달성률 (%)",
-                            title_font=dict(size=38, color="#334155"),
-                            tickfont=dict(size=36, color="#64748B"),
-                            gridcolor="#F1F5F9",
+                            title_font=dict(size=32),
+                            tickfont=dict(size=30),
                             range=[0, 115],
                         ),
                     )
                     st.plotly_chart(fig_comp, use_container_width=True)
 
-        # ------------------ 전체 대리점 목록 조회 표 (조건부 서식 및 정렬 적용) ------------------
+        # ------------------ 전체 대리점 목록 조회 표 ------------------
         st.markdown("---")
-        st.subheader("🔍 대리점별 전체 항목 조회")
+        st.markdown(
+            "<h2 style='font-size: 44px; font-weight: bold;'>🔍 대리점별 전체 항목 조회</h2>",
+            unsafe_allow_html=True,
+        )
         clean_display_df = display_df.drop(
             columns=["_s_seconds"], errors="ignore"
         )
-
         styled_overall_df = apply_overall_table_styler(clean_display_df)
         st.dataframe(styled_overall_df, use_container_width=True, height=650)
 
