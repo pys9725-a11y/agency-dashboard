@@ -7,7 +7,7 @@ from datetime import datetime, time
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 import streamlit as st
 
-st.set_page_config(page_title="내 대시보드", layout="wide")
+st.set_page_config(page_title="대리점 서비스 평가", layout="wide")
 
 # 우측 상단 툴바 및 헤더 숨기기
 st.markdown("""
