@@ -7,7 +7,7 @@ import streamlit as st
 # ------------------ 기본 페이지 설정 ------------------
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ CSS 스타일링 (헤더/푸터/Manage app 숨김, 폰트 및 카드 커스텀) ------------------
+# ------------------ CSS 스타일링 (초대형 폰트 스타일링: 화면 비율 33% 대응) ------------------
 st.markdown(
     """
     <style>
@@ -25,75 +25,81 @@ st.markdown(
             display: none !important;
         }
 
-        /* 2. 전체 기본 폰트 크기 확대 */
+        /* 2. 전체 기본 폰트 크기 대폭 확대 (28px -> 52px) */
         html, body, [class*="css"] {
-            font-size: 28px !important;
+            font-size: 52px !important;
         }
         
-        /* 3. 제목 및 헤더 폰트 크기 */
-        h1 { font-size: 3.0rem !important; }
-        h2 { font-size: 2.8rem !important; }
-        h3 { font-size: 2.4rem !important; }
+        /* 3. 제목 및 헤더 폰트 크기 확대 */
+        h1 { font-size: 5.5rem !important; }
+        h2 { font-size: 5.0rem !important; }
+        h3 { font-size: 4.2rem !important; }
+        h4 { font-size: 3.5rem !important; }
         
         /* 4. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
-            font-size: 24px !important;
+            font-size: 46px !important;
+            line-height: 1.4 !important;
         }
         .stDataFrame th {
             text-align: center !important;
-            font-size: 24px !important;
+            font-size: 48px !important;
+            padding: 16px !important;
         }
         
         /* 5. 드롭다운 및 라디오 버튼 글자 크기 */
         div[data-baseweb="select"] * {
-            font-size: 24px !important;
+            font-size: 44px !important;
         }
         div[data-widget="selectbox"] label, .stSelectbox label {
-            font-size: 22px !important;
+            font-size: 44px !important;
             font-weight: bold !important;
         }
 
         /* 6. 파일 업로더 글자 크기 */
         .stFileUploader label {
-            font-size: 28px !important;
+            font-size: 52px !important;
         }
         .stFileUploader section {
-            padding: 2rem !important;
+            padding: 3rem !important;
         }
 
         /* 7. 탭(Tab) 버튼 폰트 및 여백 */
         button[data-baseweb="tab"] {
-            font-size: 22px !important;
-            padding: 8px 16px !important;
+            font-size: 44px !important;
+            padding: 16px 32px !important;
         }
         button[data-baseweb="tab"] div {
-            font-size: 22px !important;
+            font-size: 44px !important;
         }
 
-        /* 8. KPI 및 메트릭 카드 입체 스타일링 */
+        /* 8. KPI 및 메트릭 카드 입체 스타일링 및 폰트 확대 */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 20px 24px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            padding: 30px 36px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         div[data-testid="stMetric"]:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12);
             border-color: #cbd5e1;
         }
         div[data-testid="stMetricLabel"] {
-            font-size: 24px !important;
+            font-size: 44px !important;
             font-weight: 700 !important;
             color: #475569 !important;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
         div[data-testid="stMetricValue"] {
-            font-size: 26px !important;
+            font-size: 52px !important;
             font-weight: 800 !important;
             color: #1e293b !important;
+        }
+        div[data-testid="stMetricDelta"] {
+            font-size: 38px !important;
         }
     </style>
 """,
@@ -354,7 +360,7 @@ if uploaded_file:
             )
             st.markdown(
                 f"""
-                <div style='background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 20px; border-radius: 12px; margin-top: 5px; margin-bottom: 15px; font-size: 20px; color: #334155;'>
+                <div style='background-color: #f8fafc; border: 2px solid #e2e8f0; padding: 20px 30px; border-radius: 16px; margin-top: 10px; margin-bottom: 25px; font-size: 40px; color: #334155;'>
                     🏢 <b>지사별 대리점 현황:</b> {counts_text}
                 </div>
                 """,
@@ -445,12 +451,20 @@ if uploaded_file:
                         category_orders=branch_order,
                         text_auto=".2f",
                         title="지사별 서비스 평가 평균 점수 (총 점수)",
-                        height=550,
+                        height=650,
                     )
                     fig2.update_layout(
-                        font=dict(size=21),
-                        xaxis=dict(tickfont=dict(size=16), tickangle=0),
-                        yaxis=dict(tickfont=dict(size=20)),
+                        font=dict(size=40),
+                        title=dict(font=dict(size=44)),
+                        xaxis=dict(
+                            tickfont=dict(size=36),
+                            title=dict(font=dict(size=38)),
+                            tickangle=0,
+                        ),
+                        yaxis=dict(
+                            tickfont=dict(size=36),
+                            title=dict(font=dict(size=38)),
+                        ),
                     )
                     st.plotly_chart(fig2, use_container_width=True)
 
@@ -481,15 +495,22 @@ if uploaded_file:
                             else None
                         ),
                         title="총접수건 대비 총 점수 분포",
-                        height=550,
+                        height=650,
                     )
-                    fig1.update_traces(marker=dict(size=10))
+                    fig1.update_traces(marker=dict(size=18))
                     fig1.update_layout(
-                        font=dict(size=21),
-                        xaxis=dict(tickfont=dict(size=20)),
-                        yaxis=dict(tickfont=dict(size=20)),
+                        font=dict(size=40),
+                        title=dict(font=dict(size=44)),
+                        xaxis=dict(
+                            tickfont=dict(size=36),
+                            title=dict(font=dict(size=38)),
+                        ),
+                        yaxis=dict(
+                            tickfont=dict(size=36),
+                            title=dict(font=dict(size=38)),
+                        ),
                         legend=dict(
-                            font=dict(size=20), title=dict(font=dict(size=20))
+                            font=dict(size=36), title=dict(font=dict(size=38))
                         ),
                     )
                     st.plotly_chart(fig1, use_container_width=True)
@@ -656,7 +677,7 @@ if uploaded_file:
                             styled_top1,
                             use_container_width=True,
                             hide_index=True,
-                            height=360,
+                            height=480,
                         )
                     with low_tab1:
                         idx_low1 = valid_sub_df1.sort_values(
@@ -671,7 +692,7 @@ if uploaded_file:
                             styled_low1,
                             use_container_width=True,
                             hide_index=True,
-                            height=360,
+                            height=480,
                         )
                 else:
                     st.info(
@@ -706,7 +727,7 @@ if uploaded_file:
                                 styled_top2,
                                 use_container_width=True,
                                 hide_index=True,
-                                height=360,
+                                height=480,
                             )
                         with low_tab2:
                             idx_low2 = valid_sub_df2.sort_values(
@@ -722,7 +743,7 @@ if uploaded_file:
                                 styled_low2,
                                 use_container_width=True,
                                 hide_index=True,
-                                height=360,
+                                height=480,
                             )
                     else:
                         st.info(
@@ -961,7 +982,7 @@ if uploaded_file:
                             textposition="inside",
                             insidetextanchor="middle",
                             textfont=dict(
-                                size=20, color="white", family="Arial Black"
+                                size=36, color="white", family="Arial Black"
                             ),
                         )
                     )
@@ -976,7 +997,7 @@ if uploaded_file:
                             text=top_labels,
                             textposition="outside",
                             textfont=dict(
-                                size=19, color="#475569", weight="bold"
+                                size=34, color="#475569", weight="bold"
                             ),
                         )
                     )
@@ -986,26 +1007,26 @@ if uploaded_file:
                         showlegend=False,
                         title=dict(
                             text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
-                            font=dict(size=28, color="#1E293B"),
+                            font=dict(size=44, color="#1E293B"),
                         ),
-                        height=550,
-                        margin=dict(l=20, r=20, t=50, b=40),
+                        height=680,
+                        margin=dict(l=20, r=20, t=60, b=40),
                         plot_bgcolor="white",
                         paper_bgcolor="white",
                         font=dict(
-                            size=22,
+                            size=38,
                             family="Malgun Gothic, Apple SD Gothic Neo, sans-serif",
                         ),
                         xaxis=dict(
                             tickfont=dict(
-                                size=26, color="#334155", weight="bold"
+                                size=38, color="#334155", weight="bold"
                             ),
                             showgrid=False,
                         ),
                         yaxis=dict(
                             title="만점 대비 달성률 (%)",
-                            title_font=dict(size=26, color="#334155"),
-                            tickfont=dict(size=24, color="#64748B"),
+                            title_font=dict(size=38, color="#334155"),
+                            tickfont=dict(size=36, color="#64748B"),
                             gridcolor="#F1F5F9",
                             range=[0, 115],
                         ),
@@ -1020,7 +1041,7 @@ if uploaded_file:
         )
 
         styled_overall_df = apply_overall_table_styler(clean_display_df)
-        st.dataframe(styled_overall_df, use_container_width=True, height=520)
+        st.dataframe(styled_overall_df, use_container_width=True, height=650)
 
     except Exception as e:
         st.error(f"⚠️ 데이터를 읽는 중 오류가 발생했습니다: {e}")
