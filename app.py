@@ -475,24 +475,8 @@ if uploaded_file:
 
                 st.markdown("---")
 
-                # 3. 만점 대비 세부 항목 달성 현황 차트 (SVG 아이콘 적용 및 범례/평균 제거)
-                
-                # Feather SVG 아이콘 정의
-                chart_icon_svg = """
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                """
-
-                # 깔끔한 SVG 아이콘 + 타이틀 레이아웃
-                st.markdown(f"""
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 15px; margin-bottom: 15px;">
-                        {chart_icon_svg}
-                        <span style="font-size: 2.2rem; font-weight: bold; color: #1E293B;">만점 대비 세부 항목 달성 현황</span>
-                    </div>
-                """, unsafe_allow_html=True)
+                # 3. 만점 대비 세부 항목 달성 현황 차트 (범례 및 평균 제거)
+                st.markdown("### 📊 만점 대비 세부 항목 달성 현황")
                 
                 # 지표별 만점 정의
                 max_score_dict = {
@@ -505,7 +489,7 @@ if uploaded_file:
                     '고객만족도': 5
                 }
 
-                # 지표별 고유 컬러 (진한색: 획득 점수 / 연한색: 미획득 배경)
+                # 이미지 2 스타일 지표별 고유 컬러 (진한색: 획득 점수 / 연한색: 미획득 배경)
                 metrics_color_config = [
                     {'main': '#8B5CF6', 'bg': '#DDD6FE'}, # 보라
                     {'main': '#F59E0B', 'bg': '#FDE68A'}, # 주황/노랑
@@ -578,7 +562,7 @@ if uploaded_file:
 
                     fig_comp.update_layout(
                         barmode='stack',
-                        showlegend=False,  # 범례 숨김
+                        showlegend=False,  # 상단 범례 숨김 처리
                         title=dict(
                             text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
                             font=dict(size=24, color='#1E293B')
