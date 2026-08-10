@@ -6,7 +6,7 @@ from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
 
-# ------------------ 전체 폰트, UI 및 카드 커스텀 CSS 스타일 ------------------
+# ------------------ 전체 폰트, UI, 표 정렬 및 카드 커스텀 CSS 스타일 ------------------
 st.markdown("""
     <style>
         /* 1. 전체 기본 폰트 크기 확대 */
@@ -19,8 +19,12 @@ st.markdown("""
         h2 { font-size: 2.8rem !important; }
         h3 { font-size: 2.4rem !important; }
         
-        /* 3. 표(Dataframe) 내부 글자 크기 */
+        /* 3. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
+            font-size: 24px !important;
+        }
+        .stDataFrame th {
+            text-align: center !important;
             font-size: 24px !important;
         }
         
@@ -50,7 +54,7 @@ st.markdown("""
             font-size: 22px !important;
         }
 
-        /* 7. KPI 및 메트릭 카드 입체 스타일링 (각 4px 확대) */
+        /* 7. KPI 및 메트릭 카드 입체 스타일링 */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             border: 1px solid #e2e8f0;
@@ -65,13 +69,13 @@ st.markdown("""
             border-color: #cbd5e1;
         }
         div[data-testid="stMetricLabel"] {
-            font-size: 24px !important; /* 20px -> 24px */
+            font-size: 24px !important;
             font-weight: 700 !important;
             color: #475569 !important;
             margin-bottom: 8px;
         }
         div[data-testid="stMetricValue"] {
-            font-size: 26px !important; /* 22px -> 26px */
+            font-size: 26px !important;
             font-weight: 800 !important;
             color: #1e293b !important;
         }
@@ -130,7 +134,28 @@ def format_time_duration(val):
     except Exception:
         return str(val)
 
-# 표 조건부 서식(Highlighting) 적용 함수
+# 표 정렬 및 서식 적용 함수
+def apply_column_alignment_and_style(styler, df_cols):
+    left_cols = [c for c in ['지사', '방문 대리점'] if c in df_cols]
+    right_cols = [c for c in ['총접수건', '미입력', '1시간이내예약건', '재방문건수', '불만건수', '독촉건수'] if c in df_cols]
+    
+    # 시간 관련 컬럼 자동 우측 정렬 추가
+    for c in df_cols:
+        if ('시간' in c or '처리' in c) and c not in ['처리시간 점수']:
+            if c not in right_cols and c not in left_cols:
+                right_cols.append(c)
+
+    center_cols = [c for c in df_cols if c not in left_cols and c not in right_cols]
+
+    if left_cols:
+        styler = styler.set_properties(subset=left_cols, **{'text-align': 'left'})
+    if right_cols:
+        styler = styler.set_properties(subset=right_cols, **{'text-align': 'right'})
+    if center_cols:
+        styler = styler.set_properties(subset=center_cols, **{'text-align': 'center'})
+
+    return styler
+
 def apply_highlight_styler(df_sub, target_col, mode='top'):
     def style_cell(val):
         if mode == 'top':
@@ -142,6 +167,9 @@ def apply_highlight_styler(df_sub, target_col, mode='top'):
     styler = df_sub.style
     if target_col in df_sub.columns:
         styler = styler.map(style_cell, subset=[target_col])
+    
+    # 컬럼 정렬 적용
+    styler = apply_column_alignment_and_style(styler, df_sub.columns)
     return styler
 
 def apply_overall_table_styler(df_input):
@@ -159,6 +187,9 @@ def apply_overall_table_styler(df_input):
     styler = df_input.style
     if '총 점수' in df_input.columns:
         styler = styler.map(highlight_total_score, subset=['총 점수'])
+    
+    # 컬럼 정렬 적용
+    styler = apply_column_alignment_and_style(styler, df_input.columns)
     return styler
 
 # 엑셀 파일 업로드
@@ -542,7 +573,7 @@ if uploaded_file:
                         text=text_labels,
                         textposition='inside',
                         insidetextanchor='middle',
-                        textfont=dict(size=20, color='white', family="Arial Black") # 16px -> 20px
+                        textfont=dict(size=20, color='white', family="Arial Black")
                     ))
 
                     # 2. 상단 연한 바 (잔여 만점 공간 채움)
@@ -553,7 +584,7 @@ if uploaded_file:
                         marker_color=bg_colors,
                         text=top_labels,
                         textposition='outside',
-                        textfont=dict(size=19, color='#475569', weight='bold') # 15px -> 19px
+                        textfont=dict(size=19, color='#475569', weight='bold')
                     ))
 
                     fig_comp.update_layout(
@@ -561,28 +592,28 @@ if uploaded_file:
                         showlegend=False,
                         title=dict(
                             text=f"<b>[{selected_agency}] 항목별 만점 대비 달성율 현황</b>",
-                            font=dict(size=28, color='#1E293B') # 24px -> 28px
+                            font=dict(size=28, color='#1E293B')
                         ),
                         height=550,
                         margin=dict(l=20, r=20, t=50, b=40),
                         plot_bgcolor='white',
                         paper_bgcolor='white',
-                        font=dict(size=22, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"), # 18px -> 22px
+                        font=dict(size=22, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
                         xaxis=dict(
-                            tickfont=dict(size=22, color='#334155', weight='bold'), # 18px -> 22px
+                            tickfont=dict(size=22, color='#334155', weight='bold'),
                             showgrid=False
                         ),
                         yaxis=dict(
                             title="만점 대비 달성률 (%)",
-                            title_font=dict(size=22, color='#334155'), # 18px -> 22px
-                            tickfont=dict(size=20, color='#64748B'), # 16px -> 20px
+                            title_font=dict(size=22, color='#334155'),
+                            tickfont=dict(size=20, color='#64748B'),
                             gridcolor='#F1F5F9',
                             range=[0, 115]
                         )
                     )
                     st.plotly_chart(fig_comp, use_container_width=True)
                     
-        # ------------------ 전체 대리점 목록 조회 표 (조건부 서식) ------------------
+        # ------------------ 전체 대리점 목록 조회 표 (조건부 서식 및 정렬 적용) ------------------
         st.markdown("---")
         st.subheader("🔍 대리점별 전체 항목 조회")
         clean_display_df = display_df.drop(columns=['_s_seconds'], errors='ignore')
