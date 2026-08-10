@@ -9,6 +9,23 @@ import streamlit as st
 
 st.set_page_config(page_title="대리점 서비스 평가", layout="wide")
 
+# 우측 하단 Manage app 버튼 및 푸터 숨기기
+st.markdown("""
+    <style>
+    /* 우측 하단 Manage app 버튼 숨기기 */
+    [data-testid="manage-app-button"],
+    .stAppViewerBadge,
+    div[class*="viewerBadge"] {
+        display: none !important;
+    }
+    
+    /* 하단 푸터 영역 숨기기 */
+    footer {
+        visibility: hidden;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # 우측 상단 툴바 및 헤더 숨기기
 st.markdown("""
     <style>
