@@ -570,7 +570,7 @@ if uploaded_file:
                         achieved_pct_list.append(pct)
                         remaining_pct_list.append(max(0, 100 - pct))
                         text_labels.append(f"<b>{val:.2f}점</b><br>({pct:.1f}%)")
-                        top_labels.append(f"만점 {max_s}점")
+                        top_labels.append(f"{max_s}점")
 
                     main_colors = [metrics_color_config[i % len(metrics_color_config)]['main'] for i in range(len(x_labels))]
                     bg_colors = [metrics_color_config[i % len(metrics_color_config)]['bg'] for i in range(len(x_labels))]
@@ -613,7 +613,7 @@ if uploaded_file:
                         paper_bgcolor='white',
                         font=dict(size=22, family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"),
                         xaxis=dict(
-                            tickfont=dict(size=22, color='#334155', weight='bold'),
+                            tickfont=dict(size=26, color='#334155', weight='bold'),
                             showgrid=False
                         ),
                         yaxis=dict(
