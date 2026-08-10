@@ -5,6 +5,19 @@ import plotly.graph_objects as go
 from datetime import datetime, time
 
 st.set_page_config(page_title="대리점 서비스 평가 대시보드", layout="wide")
+import streamlit as st
+
+st.set_page_config(page_title="내 대시보드", layout="wide")
+
+# 우측 상단 툴바 및 헤더 숨기기
+st.markdown("""
+    <style>
+    header[data-testid="stHeader"] {
+        visibility: hidden;
+        height: 0rem;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ------------------ 전체 폰트, UI, 표 정렬 및 카드 커스텀 CSS 스타일 ------------------
 st.markdown("""
