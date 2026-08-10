@@ -449,7 +449,7 @@ if uploaded_file:
 
                     with cols_row1[idx]:
                         st.metric(
-                            label=f"{label} (만점 {max_score}점)",
+                            label=f"{label} ( {max_score}점)",
                             value=f"{score_val:.2f} 점",
                             delta=delta_text
                         )
@@ -464,11 +464,11 @@ if uploaded_file:
                     avg_score_val = df[col_name].mean() if col_name in df.columns else 0.0
                     diff = score_val - avg_score_val
 
-                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 / 만점: {max_score}점)"
+                    delta_text = f"{diff:+.2f}점 (평균: {avg_score_val:.2f}점 /  {max_score}점)"
 
                     with cols_row2[idx]:
                         st.metric(
-                            label=f"{label} (만점 {max_score}점)",
+                            label=f"{label} ( {max_score}점)",
                             value=f"{score_val:.2f} 점",
                             delta=delta_text
                         )
