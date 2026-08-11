@@ -105,7 +105,7 @@ st.markdown(
         /* 9. 그래프(차트) 세로 높이 강제 확대 */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 650px !important;
+            height: 1000px !important;
         }
 
         /* 10. 표(테이블) 헤더 글자 크기 */
@@ -132,13 +132,13 @@ st.markdown(
 
         /* 13. 모든 블록 요소 사이의 수직 간격(gap) 확대 */
         [data-testid="stVerticalBlock"] {
-            gap: 4rem !important;
+            gap: 3rem !important;
         }
 
         /* 14. 섹션 제목 위아래 여백 확대 */
         h1, h2, h3, h4 {
             margin-top: 80px !important;
-            margin-bottom: 40px !important;
+            margin-bottom: 20px !important;
         }
 
         /* 15. 구분선 위아래 여백 확대 */
