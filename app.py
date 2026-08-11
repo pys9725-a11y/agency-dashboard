@@ -102,10 +102,10 @@ st.markdown(
             font-size: 38px !important;
         }
 
-        /* 9. 그래프(차트) 세로 높이 강제 확대 */
+        /* [수정] 9. 그래프 크기는 크게 유지하되, 화면 높이 비례(vh)로 스크롤 방지 */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 1000px !important;
+            height: 62vh !important;  /* 브라우저 화면 높이의 62% 차지 (크기 유지) */
         }
 
         /* 10. 표(테이블) 헤더 글자 크기 */
@@ -141,10 +141,16 @@ st.markdown(
             margin-bottom: 20px !important;
         }
 
-        /* 15. 구분선 위아래 여백 확대 */
-        hr {
-            margin-top: 100px !important;
-            margin-bottom: 100px !important;
+        /* [수정] 15. 제목 상하 여백 축소 (그래프가 들어갈 공간 확보) */
+        h1, h2, h3, h4 {
+            margin-top: 10px !important;
+            margin-bottom: 10px !important;
+        }
+
+        /* [추가] Streamlit 기본 상하 여백 최소화 (화면 넘침 방지) */
+        .main .block-container {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
         }
     </style>
 """,
