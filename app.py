@@ -143,6 +143,19 @@ st.markdown(
             margin-top: 40px !important;
             margin-bottom: 20px !important;
         }
+
+        /* 1. 그래프 세로 높이 확대 (구분선 사이 데이터 공간 확장) */
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stPlotlyChart"] > div {
+            height: 800px !important;  /* 취향에 따라 650px ~ 800px 조절 */
+        }
+
+        /* 2. 상·하단 구분선 여백 설정 */
+        hr {
+            margin-top: 50px !important;
+            margin-bottom: 50px !important;
+        }
+        
     </style>
 """,
     unsafe_allow_html=True,
