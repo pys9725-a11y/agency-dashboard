@@ -25,7 +25,7 @@ st.markdown(
             display: none !important;
         }
 
-        /* 2. 전체 기본 폰트 크기 대폭 확대 */
+        /* 2. 전체 기본 폰트 크기 확대 */
         html, body, [class*="css"] {
             font-size: 40px !important;
         }
@@ -36,14 +36,12 @@ st.markdown(
         h3 { font-size: 2.9rem !important; }
         h4 { font-size: 2.2rem !important; }
         
-        /* 4. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
+        /* 4. 표(Dataframe) 기본 스타일 정렬 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
-            font-size: 46px !important;
             line-height: 1.4 !important;
         }
         .stDataFrame th {
             text-align: center !important;
-            font-size: 48px !important;
             padding: 16px !important;
         }
         
@@ -73,7 +71,7 @@ st.markdown(
             font-size: 44px !important;
         }
 
-        /* 8. KPI 및 메트릭 카드 입체 스타일링 및 폰트 확대 */
+        /* 8. KPI 및 메트릭 카드 입체 스타일링 */
         div[data-testid="stMetric"] {
             background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
             border: 3px solid #e2e8f0;
@@ -102,61 +100,53 @@ st.markdown(
             font-size: 38px !important;
         }
 
-        /* [수정] 9. 그래프 크기는 크게 유지하되, 화면 높이 비례(vh)로 스크롤 방지 */
+        /* [1번 이미지 반영] 9. 그래프 높이를 한눈에 보이도록 축소 (650px -> 450px) */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 62vh !important;  /* 브라우저 화면 높이의 62% 차지 (크기 유지) */
+            height: 450px !important;
         }
 
-        /* 10. 표(테이블) 헤더 글자 크기 */
+        /* [2번 이미지 반영] 10. 표 헤더 글자 크기 5px 확대 (30px -> 35px) */
         .stDataFrame th, 
         .stDataFrame div[role="columnheader"], 
         table th {
-            font-size: 30px !important;
+            font-size: 35px !important;
             font-weight: bold !important;
         }
 
-        /* 11. 표(테이블) 본문 데이터 글자 크기 */
+        /* [2번 이미지 반영] 11. 표 본문 글자 크기 5px 확대 (30px -> 35px) */
         .stDataFrame div[role="gridcell"], 
         .stDataFrame td, 
         table td {
-            font-size: 30px !important;
+            font-size: 35px !important;
         }
 
-        /* 12. 상단 탭 버튼 글자 크기 */
+        /* [2번 이미지 반영] 12. 표 전체 높이를 늘려 10개 행이 한 번에 보이도록 설정 */
+        .stDataFrame, div[data-testid="stDataFrame"] {
+            height: 520px !important;
+        }
+
+        /* 13. 상단 탭 버튼 글자 크기 */
         button[data-baseweb="tab"] *, 
         button[data-baseweb="tab"] p {
-            font-size: 30px !important;
+            font-size: 35px !important;
             font-weight: 600 !important;
         }
 
-        /* 13. 모든 블록 요소 사이의 수직 간격(gap) 확대 */
+        /* 14. 블록 요소 간 간격 설정 */
         [data-testid="stVerticalBlock"] {
-            gap: 3rem !important;
+            gap: 2.5rem !important;
         }
 
-        /* 14. 섹션 제목 위아래 여백 확대 */
+        /* 15. 제목 위아래 여백 */
         h1, h2, h3, h4 {
-            margin-top: 80px !important;
+            margin-top: 40px !important;
             margin-bottom: 20px !important;
-        }
-
-        /* [수정] 15. 제목 상하 여백 축소 (그래프가 들어갈 공간 확보) */
-        h1, h2, h3, h4 {
-            margin-top: 10px !important;
-            margin-bottom: 10px !important;
-        }
-
-        /* [추가] Streamlit 기본 상하 여백 최소화 (화면 넘침 방지) */
-        .main .block-container {
-            padding-top: 1.5rem !important;
-            padding-bottom: 1.5rem !important;
         }
     </style>
 """,
     unsafe_allow_html=True,
 )
-
 
 # ------------------ 유틸리티 함수 ------------------
 def parse_time_to_seconds(val):
