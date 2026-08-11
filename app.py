@@ -103,7 +103,7 @@ st.markdown(
         /* [1번 이미지 반영] 9. 그래프 높이를 한눈에 보이도록 축소 (650px -> 450px) */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 450px !important;
+            height: 1000px !important;
         }
 
         /* [2번 이미지 반영] 10. 표 헤더 글자 크기 5px 확대 (30px -> 35px) */
