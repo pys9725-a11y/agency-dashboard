@@ -100,23 +100,35 @@ st.markdown(
         }
         div[data-testid="stMetricDelta"] {
             font-size: 38px !important;
-            
-        /* 9. 표(테이블) 헤더 (지사, 방문 대리점, 총접수건 등) 글자 크기 */
-    .stDataFrame table th, table th {
-        font-size: 30px !important;   /* 원하는 크기로 변경하세요 */
-        font-weight: bold !important;
-    }
+        }
 
-    /* 10. 표(테이블) 본문 데이터 글자 크기 */
-    .stDataFrame table td, table td {
-        font-size: 30px !important;   /* 원하는 크기로 변경하세요 (예: 12px ~ 16px) */
-    }
+        /* 9. 그래프(차트) 세로 높이 강제 확대 */
+        div[data-testid="stPlotlyChart"],
+        div[data-testid="stPlotlyChart"] > div {
+            height: 650px !important;
+        }
 
-    /* 11. 상단 탭 버튼 (TOP 20 (우수), LOW 20 (주의)) 글자 크기 */
-    button[data-baseweb="tab"] p {
-        font-size: 30px !important;   /* 탭 글자 크기 */
-        font-weight: 600 !important;
-    }
+        /* 10. 표(테이블) 헤더 글자 크기 (Streamlit Grid + HTML Table 완전 대응) */
+        .stDataFrame th, 
+        .stDataFrame div[role="columnheader"], 
+        table th {
+            font-size: 30px !important;
+            font-weight: bold !important;
+        }
+
+        /* 11. 표(테이블) 본문 데이터 글자 크기 (Streamlit Grid + HTML Table 완전 대응) */
+        .stDataFrame div[role="gridcell"], 
+        .stDataFrame td, 
+        table td {
+            font-size: 30px !important;
+        }
+
+        /* 12. 상단 탭 버튼 (TOP 20, LOW 20) 글자 크기 */
+        button[data-baseweb="tab"] *, 
+        button[data-baseweb="tab"] p {
+            font-size: 30px !important;
+            font-weight: 600 !important;
+        }
     </style>
 """,
     unsafe_allow_html=True,
