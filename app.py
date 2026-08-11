@@ -25,7 +25,7 @@ st.markdown(
             display: none !important;
         }
 
-        /* 2. 전체 기본 폰트 크기 대폭 확대 (28px -> 52px) */
+        /* 2. 전체 기본 폰트 크기 대폭 확대 */
         html, body, [class*="css"] {
             font-size: 40px !important;
         }
@@ -105,29 +105,46 @@ st.markdown(
         /* 9. 그래프(차트) 세로 높이 강제 확대 */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 1000px !important;
+            height: 650px !important;
         }
 
-        /* 10. 표(테이블) 헤더 글자 크기 (Streamlit Grid + HTML Table 완전 대응) */
+        /* 10. 표(테이블) 헤더 글자 크기 */
         .stDataFrame th, 
         .stDataFrame div[role="columnheader"], 
         table th {
-            font-size: 60px !important;
+            font-size: 30px !important;
             font-weight: bold !important;
         }
 
-        /* 11. 표(테이블) 본문 데이터 글자 크기 (Streamlit Grid + HTML Table 완전 대응) */
+        /* 11. 표(테이블) 본문 데이터 글자 크기 */
         .stDataFrame div[role="gridcell"], 
         .stDataFrame td, 
         table td {
-            font-size: 60px !important;
+            font-size: 30px !important;
         }
 
-        /* 12. 상단 탭 버튼 (TOP 20, LOW 20) 글자 크기 */
+        /* 12. 상단 탭 버튼 글자 크기 */
         button[data-baseweb="tab"] *, 
         button[data-baseweb="tab"] p {
-            font-size: 60px !important;
+            font-size: 30px !important;
             font-weight: 600 !important;
+        }
+
+        /* 13. 모든 블록 요소 사이의 수직 간격(gap) 확대 */
+        [data-testid="stVerticalBlock"] {
+            gap: 4rem !important;
+        }
+
+        /* 14. 섹션 제목 위아래 여백 확대 */
+        h1, h2, h3, h4 {
+            margin-top: 80px !important;
+            margin-bottom: 40px !important;
+        }
+
+        /* 15. 구분선 위아래 여백 확대 */
+        hr {
+            margin-top: 100px !important;
+            margin-bottom: 100px !important;
         }
     </style>
 """,
