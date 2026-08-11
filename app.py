@@ -105,14 +105,14 @@ st.markdown(
         /* 9. 그래프(차트) 세로 높이 강제 확대 */
         div[data-testid="stPlotlyChart"],
         div[data-testid="stPlotlyChart"] > div {
-            height: 650px !important;
+            height: 1000px !important;
         }
 
         /* 10. 표(테이블) 헤더 글자 크기 (Streamlit Grid + HTML Table 완전 대응) */
         .stDataFrame th, 
         .stDataFrame div[role="columnheader"], 
         table th {
-            font-size: 30px !important;
+            font-size: 60px !important;
             font-weight: bold !important;
         }
 
@@ -120,13 +120,13 @@ st.markdown(
         .stDataFrame div[role="gridcell"], 
         .stDataFrame td, 
         table td {
-            font-size: 30px !important;
+            font-size: 60px !important;
         }
 
         /* 12. 상단 탭 버튼 (TOP 20, LOW 20) 글자 크기 */
         button[data-baseweb="tab"] *, 
         button[data-baseweb="tab"] p {
-            font-size: 30px !important;
+            font-size: 60px !important;
             font-weight: 600 !important;
         }
     </style>
