@@ -100,7 +100,23 @@ st.markdown(
         }
         div[data-testid="stMetricDelta"] {
             font-size: 38px !important;
-        }
+            
+        /* 8. 표(테이블) 헤더 (지사, 방문 대리점, 총접수건 등) 글자 크기 */
+    .stDataFrame table th, table th {
+        font-size: 15px !important;   /* 원하는 크기로 변경하세요 */
+        font-weight: bold !important;
+    }
+
+    /* 9. 표(테이블) 본문 데이터 글자 크기 */
+    .stDataFrame table td, table td {
+        font-size: 14px !important;   /* 원하는 크기로 변경하세요 (예: 12px ~ 16px) */
+    }
+
+    /* 10. 상단 탭 버튼 (TOP 20 (우수), LOW 20 (주의)) 글자 크기 */
+    button[data-baseweb="tab"] p {
+        font-size: 16px !important;   /* 탭 글자 크기 */
+        font-weight: 600 !important;
+    }
     </style>
 """,
     unsafe_allow_html=True,
