@@ -31,10 +31,10 @@ st.markdown(
         }
         
         /* 3. 제목 및 헤더 폰트 크기 확대 */
-        h1 { font-size: 4.5rem !important; }
-        h2 { font-size: 4.0rem !important; }
-        h3 { font-size: 3.2rem !important; }
-        h4 { font-size: 2.5rem !important; }
+        h1 { font-size: 4.2rem !important; }
+        h2 { font-size: 3.7rem !important; }
+        h3 { font-size: 2.9rem !important; }
+        h4 { font-size: 2.2rem !important; }
         
         /* 4. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
@@ -58,10 +58,10 @@ st.markdown(
 
         /* 6. 파일 업로더 글자 크기 */
         .stFileUploader label {
-            font-size: 52px !important;
+            font-size: 40px !important;
         }
         .stFileUploader section {
-            padding: 3rem !important;
+            padding: 5rem !important;
         }
 
         /* 7. 탭(Tab) 버튼 폰트 및 여백 */
