@@ -27,14 +27,14 @@ st.markdown(
 
         /* 2. 전체 기본 폰트 크기 대폭 확대 (28px -> 52px) */
         html, body, [class*="css"] {
-            font-size: 52px !important;
+            font-size: 40px !important;
         }
         
         /* 3. 제목 및 헤더 폰트 크기 확대 */
-        h1 { font-size: 5.5rem !important; }
-        h2 { font-size: 5.0rem !important; }
-        h3 { font-size: 4.2rem !important; }
-        h4 { font-size: 3.5rem !important; }
+        h1 { font-size: 4.5rem !important; }
+        h2 { font-size: 4.0rem !important; }
+        h3 { font-size: 3.2rem !important; }
+        h4 { font-size: 2.5rem !important; }
         
         /* 4. 표(Dataframe) 내부 글자 크기 및 헤더 정렬 */
         .stDataFrame, .stDataFrame div[role="gridcell"] {
